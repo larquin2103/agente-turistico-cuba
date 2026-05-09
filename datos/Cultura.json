@@ -1,0 +1,72 @@
+{
+  "query": "Lugares Culura y tradiosnes para el trurismo los 40 mas buscados",
+  "location": "Havana Cuba",
+  "local_results": [
+    {
+      "position": 1,
+      "ludocid": "1893574373002507525",
+      "place_id": "ChIJeVjnWbp5zYgRBfWYEtxTRxo",
+      "kgmid": "/m/0f77x1",
+      "data_id": "0x88cd79ba59e75879:0x1a4753dc1298f505",
+      "title": "National Capitol of Cuba",
+      "description": "Stately, historic government landmark. Built in 1929, this elegant municipal building features a sizable, domed cupola & a central portico.",
+      "address": "66 Cienfuegos, La Habana 10200, Cuba",
+      "phone": "(07) 8603411",
+      "rating": 4.6,
+      "reviews": 3330,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJeVjnWbp5zYgRBfWYEtxTRxo&q=Lugares+Cultura+y+tradiciones+para+el+turismo+los+40+mas+buscados+Havana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.1349853,
+        "longitude": -82.3596036
+      },
+      "type": "City Hall",
+      "types": [
+        "City Hall",
+        "Tourist attraction"
+      ],
+      "open_state": "Open",
+      "hours": "Closes soon · 4 PM · Opens 9 AM Sat",
+      "open_hours": {
+        "friday": "9 AM–4 PM",
+        "saturday": "9 AM–4 PM",
+        "sunday": "9 AM–4 PM",
+        "monday": "9 AM–4 PM",
+        "tuesday": "9 AM–4 PM",
+        "wednesday": "9 AM–4 PM",
+        "thursday": "9 AM–4 PM"
+      },
+      "extensions": [
+        {
+          "title": "Service options",
+          "items": [
+            {
+              "title": "Onsite services",
+              "value": "Onsite services available"
+            }
+          ]
+        },
+        {
+          "title": "Accessibility",
+          "items": [
+            {
+              "title": "Wheelchair accessible entrance",
+              "value": "No wheelchair accessible entrance"
+            }
+          ]
+        },
+        {
+          "title": "Amenities",
+          "items": [
+            {
+              "title": "Restroom",
+              "value": "Has restroom"
+            }
+          ]
+        }
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAE98NlxFHxWyT1yQvYjuEhaNWRkZKeRreOQqqzwyxF4xOiiBS_I01UD3nbqA_VcPpYFE73NYY4_IXNm_cBig9nhliMPhGhtn9yZi5EL6ktek5NHzqTRX-QnA3vb9fN8TUTH2Stw=w114-h120-k-no-pi-0.112540185-ya119.88746-ro-0-fo100"
+    }
+  ],
+  "total_results": 1
+}

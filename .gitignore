@@ -1,0 +1,11 @@
+.env
+db/
+__pycache__/
+*.pyc
+*.pyo
+Scripts/
+Lib/
+Include/
+pyvenv.cfg
+*.kml
+*.gpx

@@ -1,0 +1,749 @@
+{
+  "query": "Lugares para servicio para autos para el  trurismo ",
+  "location": "Havana Cuba",
+  "local_results": [
+    {
+      "position": 1,
+      "ludocid": "12142998882532546142",
+      "place_id": "ChIJbSelNmF3zYgRXlZRtSWZhKg",
+      "kgmid": "/g/11cs06g_m0",
+      "data_id": "0x88cd776136a5276d:0xa8849925b551565e",
+      "title": "Old Cars Havana",
+      "address": "4JJ4+JH3, La Habana, Cuba",
+      "phone": "05290 5142",
+      "rating": 4.9,
+      "reviews": 82,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJbSelNmF3zYgRXlZRtSWZhKg&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://www.oldcarshavana.com/",
+      "domain": "oldcarshavana.com",
+      "gps_coordinates": {
+        "latitude": 23.1315248,
+        "longitude": -82.3935924
+      },
+      "type": "Tour agency",
+      "types": [
+        "Tour agency"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 8 PM",
+      "open_hours": {
+        "friday": "6 AM–8 PM",
+        "saturday": "6 AM–8 PM",
+        "sunday": "6 AM–8 PM",
+        "monday": "6 AM–8 PM",
+        "tuesday": "6 AM–8 PM",
+        "wednesday": "6 AM–8 PM",
+        "thursday": "6 AM–8 PM"
+      },
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHf1RUVjPFUci5u-HIqPDhrUnMt4fe_U8MoSK5sGxlu6JF4zBBK1u3LYYWsoeVH0CdtDDp9tHv5tvKzOJoBiZZWwR-GOFFhKRkZ4t02VMzyaHopmmoW2N674dttqZ9aAOTPVYqX=w80-h99-k-no"
+    },
+    {
+      "position": 2,
+      "ludocid": "10211096430693452266",
+      "place_id": "ChIJFfKGh-xzzYgR6gm-XhoatY0",
+      "kgmid": "/g/11dxd1kpt9",
+      "data_id": "0x88cd73ec8786f215:0x8db51a1a5ebe09ea",
+      "title": "CubaCar",
+      "address": "3GR4+H86, La Habana, Cuba",
+      "phone": "(07) 2041707",
+      "rating": 1.7,
+      "reviews": 139,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJFfKGh-xzzYgR6gm-XhoatY0&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://www.rentcarcuba.com/",
+      "domain": "rentcarcuba.com",
+      "gps_coordinates": {
+        "latitude": 23.0914039,
+        "longitude": -82.4942411
+      },
+      "type": "Car rental agency",
+      "types": [
+        "Car rental agency"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 8 PM",
+      "open_hours": {
+        "friday": "9 AM–8 PM",
+        "saturday": "9 AM–8 PM",
+        "sunday": "9 AM–8 PM",
+        "monday": "9 AM–8 PM",
+        "tuesday": "9 AM–8 PM",
+        "wednesday": "9 AM–8 PM",
+        "thursday": "9 AM–8 PM"
+      },
+      "extensions": [
+        {
+          "title": "Accessibility",
+          "items": [
+            {
+              "title": "Wheelchair accessible entrance",
+              "value": "Has wheelchair accessible entrance"
+            },
+            {
+              "title": "Wheelchair accessible parking lot",
+              "value": "Has wheelchair accessible parking lot"
+            }
+          ]
+        }
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAE0o4w_U32n2734RhbFQ41A4-z4NJxgnz1nQ9mf3G8pmqaE7ojxmULheIUN1RsIAYIPpJVFL2PqujgvsOLxlx3-bZTmJdpITGrdQahJJ7X9Jn6TIMwhQDa9L-ntotqtIORWhi1E1-rOJ3Sa=w122-h92-k-no"
+    },
+    {
+      "position": 3,
+      "ludocid": "12788830191466299493",
+      "place_id": "ChIJVTncIjdxzYgRZcAjD00Ne7E",
+      "kgmid": "/g/1tfwl4f9",
+      "data_id": "0x88cd713722dc3955:0xb17b0d4d0f23c065",
+      "title": "Havanautos",
+      "address": "806 Calle A, La Habana, Cuba",
+      "phone": "(11) 95066-2508",
+      "rating": 1.5,
+      "reviews": 19,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJVTncIjdxzYgRZcAjD00Ne7E&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://transtur.com/",
+      "domain": "transtur.com",
+      "gps_coordinates": {
+        "latitude": 23.0969336,
+        "longitude": -82.44940059999999
+      },
+      "type": "Car rental agency",
+      "types": [
+        "Car rental agency"
+      ],
+      "hours": "Open now",
+      "extensions": [
+        {
+          "title": "Payments",
+          "items": [
+            {
+              "title": "Debit cards",
+              "value": "Accepts debit cards"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "position": 4,
+      "ludocid": "15593813307021498587",
+      "place_id": "ChIJA-q6sMB5zYgR25jGSpVaaNg",
+      "kgmid": "/g/11t9rpj4xs",
+      "data_id": "0x88cd79c0b0baea03:0xd8685a954ac698db",
+      "title": "Cuba Auto Tour",
+      "address": "4JQR+5MF, P.º de Martí, La Habana, Cuba",
+      "phone": "05 2399393",
+      "rating": 5,
+      "reviews": 7,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJA-q6sMB5zYgR25jGSpVaaNg&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://www.travelcubaclassic.com/",
+      "domain": "travelcubaclassic.com",
+      "gps_coordinates": {
+        "latitude": 23.1379364,
+        "longitude": -82.3583426
+      },
+      "type": "Transportation service",
+      "types": [
+        "Transportation service"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 6 PM",
+      "open_hours": {
+        "friday": "9 AM–6 PM",
+        "saturday": "9 AM–9 PM",
+        "sunday": "Closed",
+        "monday": "9 AM–6 PM",
+        "tuesday": "9 AM–6 PM",
+        "wednesday": "9 AM–6 PM",
+        "thursday": "9 AM–6 PM"
+      },
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFDCp5EkCjdZnL1OuLG0F9HXHUYMcZSxHJQsXU7rA1njJ-ud4tVnRXxhiyVXy1CDluTU3rM4CD7VOXvPTo8LqW2J9vwe76AfRlFcPu81TMivjeDALiYg_pk9wTfTO8q0YTbvxo=w197-h92-k-no"
+    },
+    {
+      "position": 5,
+      "ludocid": "2131930340242756930",
+      "place_id": "ChIJCWH9KwBvzYgRQhUMWFkjlh0",
+      "kgmid": "/g/11xf2pkw9r",
+      "data_id": "0x88cd6f002bfd6109:0x1d962359580c1542",
+      "title": "Renta de Autos",
+      "address": "XHXR+FM5, La Habana, Cuba",
+      "rating": 5,
+      "reviews": 2,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJCWH9KwBvzYgRQhUMWFkjlh0&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 22.9987035,
+        "longitude": -82.4083398
+      },
+      "type": "Car rental agency",
+      "types": [
+        "Car rental agency"
+      ],
+      "open_state": "Open",
+      "hours": "Open 24 hours",
+      "open_hours": {
+        "friday": "Open 24 hours",
+        "saturday": "Open 24 hours",
+        "sunday": "Open 24 hours",
+        "monday": "Open 24 hours",
+        "tuesday": "Open 24 hours",
+        "wednesday": "Open 24 hours",
+        "thursday": "Open 24 hours"
+      },
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAExeNbyDaRN3rXaPXNLFnUYaS1pWxlWiAMBSdnsTLlXP6n2FRoU1GkzmjodU7Ep8BQBzb9iWwJFeAEpO6RinDhI8pqBswoiJzcaAHGhQNjzWphHKw6b-IPiTd02le-7q4dbwLZZN03xWAE=w122-h92-k-no"
+    },
+    {
+      "position": 6,
+      "ludocid": "5670038465476587899",
+      "place_id": "ChIJ09rV0dJwzYgRe3GIdfEFsE4",
+      "kgmid": "/g/11c7hf5lg2",
+      "data_id": "0x88cd70d2d1d5dad3:0x4eb005f17588717b",
+      "title": "ELECTRO - AUTO",
+      "address": "4H3G+RR2, La Habana, Cuba",
+      "phone": "05 2837312",
+      "rating": 4.5,
+      "reviews": 4,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJ09rV0dJwzYgRe3GIdfEFsE4&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "https://www.revolico.com/autos/piezas-accesorios/electro-auto-en-playa-su-mejor-opcion52837312-14377652.html",
+      "domain": "revolico.com",
+      "gps_coordinates": {
+        "latitude": 23.1045048,
+        "longitude": -82.422981
+      },
+      "type": "Auto electrical service",
+      "types": [
+        "Auto electrical service"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 5:30 PM",
+      "open_hours": {
+        "friday": "8 AM–5:30 PM",
+        "saturday": "8 AM–5:30 PM",
+        "sunday": "Closed",
+        "monday": "8 AM–5:30 PM",
+        "tuesday": "8 AM–5:30 PM",
+        "wednesday": "8 AM–5:30 PM",
+        "thursday": "8 AM–5:30 PM"
+      },
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAE8tOkfs3RH5JNoiGm9P3ovrN2OmEA_uuc2OYtPtKRJDvwn0YbuPg0WcEK0eL2UnSi-6cqSV6QSnbShSGbcN-VL6QtZhMmObg4jiFVh-iUAiXKBNCY814J2VMwiUwIDcePgJk2OrQ=w171-h92-k-no"
+    },
+    {
+      "position": 7,
+      "ludocid": "1449714074486545275",
+      "place_id": "ChIJ95n1hhlxzYgRe5unE0VrHhQ",
+      "kgmid": "/g/11gmj_3xp3",
+      "data_id": "0x88cd711986f599f7:0x141e6b4513a79b7b",
+      "title": "CarFix",
+      "address": "3JX6+9FV, La Habana, Cuba",
+      "phone": "(07) 6413400",
+      "rating": 5,
+      "reviews": 2,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJ95n1hhlxzYgRe5unE0VrHhQ&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://grupocarfix.com/",
+      "domain": "grupocarfix.com",
+      "gps_coordinates": {
+        "latitude": 23.0984934,
+        "longitude": -82.3888425
+      },
+      "type": "Auto machine shop",
+      "types": [
+        "Auto machine shop"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 5:30 PM",
+      "open_hours": {
+        "friday": "8:30 AM–5:30 PM",
+        "saturday": "8:30 AM–2 PM",
+        "sunday": "Closed",
+        "monday": "8:30 AM–5:30 PM",
+        "tuesday": "8:30 AM–5:30 PM",
+        "wednesday": "8:30 AM–5:30 PM",
+        "thursday": "8:30 AM–5:30 PM"
+      },
+      "extensions": [
+        {
+          "title": "Amenities",
+          "items": [
+            {
+              "title": "Mechanic",
+              "value": "Has mechanic"
+            }
+          ]
+        }
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGiXim8Ym54lNZHt1hNFySgyskv09slpUDCsTGjFetgzFgoMYuRKPezF7CvXOcMWCqQpAdYG2KCqvtyH6sO97I9w6rd-Nffr9a_nvzgbVciuFTE-QtElwf9jQt37PRqOtS_phc=w189-h92-k-no"
+    },
+    {
+      "position": 8,
+      "ludocid": "3857846552957616016",
+      "place_id": "ChIJPb5QXTF3zYgRkP8ACwDTiTU",
+      "kgmid": "/g/1tf1cjyz",
+      "data_id": "0x88cd77315d50be3d:0x3589d3000b00ff90",
+      "title": "Gas Station (for rental cars)",
+      "address": "4H6M+H6R, Calle 42, La Habana, Cuba",
+      "rating": 3.7,
+      "reviews": 6,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJPb5QXTF3zYgRkP8ACwDTiTU&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.1114952,
+        "longitude": -82.4169955
+      },
+      "type": "Gas station",
+      "types": [
+        "Gas station"
+      ],
+      "open_state": "Open",
+      "hours": "Open 24 hours",
+      "open_hours": {
+        "friday": "Open 24 hours",
+        "saturday": "Open 24 hours",
+        "sunday": "Open 24 hours",
+        "monday": "Open 24 hours",
+        "tuesday": "Open 24 hours",
+        "wednesday": "Open 24 hours",
+        "thursday": "Open 24 hours"
+      },
+      "extensions": [
+        {
+          "title": "Accessibility",
+          "items": [
+            {
+              "title": "Wheelchair accessible restroom",
+              "value": "Has wheelchair accessible restroom"
+            }
+          ]
+        },
+        {
+          "title": "Offerings",
+          "items": [
+            {
+              "title": "Car wash",
+              "value": "Has car wash"
+            },
+            {
+              "title": "Diesel gas",
+              "value": "Sells diesel gas"
+            },
+            {
+              "title": "Propane exchange",
+              "value": "Has propane exchange"
+            }
+          ]
+        },
+        {
+          "title": "Amenities",
+          "items": [
+            {
+              "title": "Restroom",
+              "value": "Has restroom"
+            }
+          ]
+        }
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAF8OqiFRojqPUCG3E8NjDaAOPy1GofBJNAvBin1OCuV0_5L3gMeQ51e5sg7eJn0ViIEHu2r7tSsVv0yTnZvS4f5Z2FYslh3LLkxYDqQ7t766tkAiH-fHxwtinwEZmGP4pXC6pP2=w122-h92-k-no"
+    },
+    {
+      "position": 9,
+      "ludocid": "7433111927307817321",
+      "place_id": "ChIJo0SqG8BvzYgRadHmYuq3J2c",
+      "kgmid": "/g/11sbk_gg6m",
+      "data_id": "0x88cd6fc01baa44a3:0x6727b7ea62e6d169",
+      "title": "Havanautos",
+      "address": "XHXR+FM5, La Habana, Cuba",
+      "rating": 1.3,
+      "reviews": 12,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJo0SqG8BvzYgRadHmYuq3J2c&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 22.998634,
+        "longitude": -82.4082794
+      },
+      "type": "Car rental agency",
+      "types": [
+        "Car rental agency"
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAF1Bu95-dI4_x4SbwMc_LP_Uf3p6Rc7CbJCDeTAR3mXYH5ikllMvnTSD_X7yo0Hum5nwqnSMt2_B4tLhYzOP2Uw4O48_xjjte2qmTeOuxbFlV09nTbimh7AIl0Wuhr0EhBDpCKH=w122-h92-k-no"
+    },
+    {
+      "position": 10,
+      "ludocid": "5026771618333146572",
+      "place_id": "ChIJTU7JG6Z5zYgRzD3DZSeuwkU",
+      "kgmid": "/g/11h1288j4x",
+      "data_id": "0x88cd79a61bc94e4d:0x45c2ae2765c33dcc",
+      "title": "Autos Antiguos",
+      "address": "4JQR+QXF, Ánimas, La Habana, Cuba",
+      "rating": 4.8,
+      "reviews": 4,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJTU7JG6Z5zYgRzD3DZSeuwkU&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.1394333,
+        "longitude": -82.3575761
+      },
+      "type": "Museum",
+      "types": [
+        "Museum"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 6 PM",
+      "open_hours": {
+        "friday": "7 AM–6 PM",
+        "saturday": "7 AM–6 PM",
+        "sunday": "7 AM–6 PM",
+        "monday": "7 AM–6 PM",
+        "tuesday": "7 AM–6 PM",
+        "wednesday": "7 AM–6 PM",
+        "thursday": "7 AM–6 PM"
+      },
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEE5sieNI9W-85odpF7gKvlc8NCoVPXydcc_SAHeE79YmcpkQFRs-yxQOuwJYUQfD_N88W3f3egOMWmQsuUb_r8qooK0PvP8Loxw7HLd_zxstrnUvfP2SoqkY5_bWrzIYnfctQw=w122-h92-k-no"
+    },
+    {
+      "position": 11,
+      "ludocid": "9084213701458893631",
+      "place_id": "ChIJa1qqCQB5zYgRP5sxMzucEX4",
+      "kgmid": "/g/11wfh2wc21",
+      "data_id": "0x88cd790009aa5a6b:0x7e119c3b33319b3f",
+      "title": "Taller de Popo",
+      "address": "4J5J+M5W, La Habana, Cuba",
+      "phone": "05 3349478",
+      "rating": 5,
+      "reviews": 176,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJa1qqCQB5zYgRP5sxMzucEX4&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://www.tallerdepopo.com/",
+      "domain": "tallerdepopo.com",
+      "gps_coordinates": {
+        "latitude": 23.10923,
+        "longitude": -82.369575
+      },
+      "type": "Auto repair shop",
+      "types": [
+        "Auto repair shop"
+      ],
+      "open_state": "Closed",
+      "hours": "Closed · Opens 9 AM Mon",
+      "open_hours": {
+        "friday": "9 AM–3 PM",
+        "saturday": "Closed",
+        "sunday": "Closed",
+        "monday": "9 AM–3 PM",
+        "tuesday": "9 AM–3 PM",
+        "wednesday": "9 AM–3 PM",
+        "thursday": "9 AM–3 PM"
+      },
+      "extensions": [
+        {
+          "title": "Amenities",
+          "items": [
+            {
+              "title": "Mechanic",
+              "value": "Has mechanic"
+            }
+          ]
+        }
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFGe2cGHZTmDHe0rwIQCmyD7PBWR0T2gYS6n5vPgmWYk4uDGKQcCTjKDIhDIagT3q7GhoMTQetlxPkDC4FO-IxgtoY2Lt_lt8e5B0C0-_aeFPYrNDo3ZNfVg8dfrypnmaV3fUCGvA=w80-h177-k-no"
+    },
+    {
+      "position": 12,
+      "ludocid": "10327061233019224715",
+      "place_id": "ChIJ_9EcB313zYgRi4LR73kXUY8",
+      "kgmid": "/g/11gr644w5t",
+      "data_id": "0x88cd777d071cd1ff:0x8f511779efd1828b",
+      "title": "Car Rental office, 3era y Paseo",
+      "address": "Calle 3era esqunina a, Paseo, La Habana, Cuba",
+      "phone": "(07) 8375586",
+      "rating": 2.2,
+      "reviews": 25,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJ_9EcB313zYgRi4LR73kXUY8&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.1397921,
+        "longitude": -82.4014438
+      },
+      "type": "Corporate office",
+      "types": [
+        "Corporate office"
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHfE6SLMvA970R_ws5msjHehvOuv7vzR5jARH3WRzGArLy5kWtwazNidyCN-D-fUGhEGomtSzEZDGyTNSCFyEZXUI7twBTRBfF3qF4SZSWJixDDJ3Te0kkDXTj7hTW6z2HxpsG0XQ=w80-h106-k-no"
+    },
+    {
+      "position": 13,
+      "ludocid": "15624411208344812725",
+      "place_id": "ChIJTSazOP93zYgRtTwGWjYP1dg",
+      "kgmid": "/g/11l77pgsv4",
+      "data_id": "0x88cd77ff38b3264d:0xd8d50f365a063cb5",
+      "title": "SEAutomotrices",
+      "address": "y 8, entre 6 Calle 1ª, La Habana, Cuba",
+      "phone": "(07) 2042181",
+      "is_unclaimed_listing": true,
+      "website": "https://seautomotrices.com/",
+      "domain": "seautomotrices.com",
+      "gps_coordinates": {
+        "latitude": 23.1297135,
+        "longitude": -82.4182189
+      },
+      "type": "Auto repair shop",
+      "types": [
+        "Auto repair shop"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 5:30 PM",
+      "open_hours": {
+        "friday": "8:30 AM–5:30 PM",
+        "saturday": "Closed",
+        "sunday": "Closed",
+        "monday": "8:30 AM–5:30 PM",
+        "tuesday": "8:30 AM–5:30 PM",
+        "wednesday": "8:30 AM–5:30 PM",
+        "thursday": "8:30 AM–5:30 PM"
+      },
+      "extensions": [
+        {
+          "title": "Amenities",
+          "items": [
+            {
+              "title": "Mechanic",
+              "value": "Has mechanic"
+            }
+          ]
+        }
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGXEmEREJqpb0yDPmMUtN3ZctoEHAW1oYVcGli0TloOOarwOlGlwXy5dxfP4UDUYg1pzxElhA04aq2xKqvINOW0G3VvbsByw2WQdcnWMEcWeuzeBjwHWvr1k1KhPxwNkg__BVH42w=w123-h92-k-no"
+    },
+    {
+      "position": 14,
+      "ludocid": "10356942721061288661",
+      "place_id": "ChIJt7KdgD13zYgR1frsB4hAu48",
+      "kgmid": "/g/11dxftpqmk",
+      "data_id": "0x88cd773d809db2b7:0x8fbb408807ecfad5",
+      "title": "Taller Calle 8",
+      "address": "4HHJ+CPP, La Habana, Cuba",
+      "phone": "(07) 2064123",
+      "rating": 3.7,
+      "reviews": 3,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJt7KdgD13zYgR1frsB4hAu48&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://www.facebook.com/tallercalle8",
+      "domain": "facebook.com",
+      "gps_coordinates": {
+        "latitude": 23.1285961,
+        "longitude": -82.4181763
+      },
+      "type": "Car repair and maintenance service",
+      "types": [
+        "Car repair and maintenance service"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 6 PM",
+      "open_hours": {
+        "friday": "7:30 AM–6 PM",
+        "saturday": "Closed",
+        "sunday": "Closed",
+        "monday": "7:30 AM–6 PM",
+        "tuesday": "7:30 AM–6 PM",
+        "wednesday": "7:30 AM–6 PM",
+        "thursday": "7:30 AM–6 PM"
+      },
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFRF7gtkh91xMiYCO-QVo0tm48jyHrHQ6ZGpx5g7kTEhWNiTim0kOQYGjXq9CvDZ0V1F8uBRhhbHuuslxqwHJ1q3ub6PE3GpI76rkHROO-2dwts5U6EeKkGcvFP9In_ytJzD24=w122-h92-k-no"
+    },
+    {
+      "position": 15,
+      "ludocid": "16459080907116994659",
+      "place_id": "ChIJ9R0Q-Hp3zYgRY2AfjuFmauQ",
+      "kgmid": "/g/11v19g652h",
+      "data_id": "0x88cd777af8101df5:0xe46a66e18e1f6063",
+      "title": "Venta de autos",
+      "address": "4HGH+829, La Habana, Cuba",
+      "rating": 3.2,
+      "reviews": 12,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJ9R0Q-Hp3zYgRY2AfjuFmauQ&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.1254789,
+        "longitude": -82.42301119999999
+      },
+      "type": "Car dealer",
+      "types": [
+        "Car dealer"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 5 PM",
+      "open_hours": {
+        "friday": "8 AM–5 PM",
+        "saturday": "Closed",
+        "sunday": "Closed",
+        "monday": "8 AM–5 PM",
+        "tuesday": "8 AM–5 PM",
+        "wednesday": "8 AM–5 PM",
+        "thursday": "8 AM–5 PM"
+      },
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHN3WYYIfk-OChTi8lbqlh27OKoDPWDyDX5AeHWFUP-U67bmzoQ07enjcYSn7i_jFXpn4h18RMJ8I9_NjCAPFDxvArhanPHic2VIGKet2fv6EFdYTT3a6Qa-YiI0lFqLAPu8lDf-w=w80-h177-k-no"
+    },
+    {
+      "position": 16,
+      "ludocid": "2480821537744927730",
+      "place_id": "ChIJn3fqbQB3zYgR8rtsbAumbSI",
+      "kgmid": "/g/11vyx569ns",
+      "data_id": "0x88cd77006dea779f:0x226da60b6c6cbbf2",
+      "title": "Novela Cuba",
+      "address": "701 Calle 13, La Habana, Cuba",
+      "phone": "05 2764482",
+      "rating": 4,
+      "reviews": 8,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJn3fqbQB3zYgR8rtsbAumbSI&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://www.novelacuba.com/",
+      "domain": "novelacuba.com",
+      "gps_coordinates": {
+        "latitude": 23.1360818,
+        "longitude": -82.39719079999999
+      },
+      "type": "Car rental agency",
+      "types": [
+        "Car rental agency"
+      ]
+    },
+    {
+      "position": 17,
+      "ludocid": "7495061654426586636",
+      "place_id": "ChIJZ8BcQb17zYgRDI6_Od3OA2g",
+      "kgmid": "/g/11sv5g7fmd",
+      "data_id": "0x88cd7bbd415cc067:0x6803cedd39bf8e0c",
+      "title": "Oficina de Registro de Vehículos",
+      "address": "3JJP+JC6, 10 de Octubre, La Habana, Cuba",
+      "phone": "(07) 6992490",
+      "rating": 1.6,
+      "reviews": 7,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJZ8BcQb17zYgRDI6_Od3OA2g&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.0822983,
+        "longitude": -82.3642649
+      },
+      "type": "Government office",
+      "types": [
+        "Government office"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 5 PM",
+      "open_hours": {
+        "friday": "8 AM–5 PM",
+        "saturday": "8 AM–1 PM",
+        "sunday": "Closed",
+        "monday": "8 AM–5 PM",
+        "tuesday": "8 AM–5 PM",
+        "wednesday": "8 AM–5 PM",
+        "thursday": "8 AM–5 PM"
+      }
+    },
+    {
+      "position": 18,
+      "ludocid": "2874373545154233811",
+      "place_id": "ChIJV6hjHR97zYgR08WynoLT4yc",
+      "kgmid": "/g/11s5ftjl1n",
+      "data_id": "0x88cd7b1f1d63a857:0x27e3d3829eb2c5d3",
+      "title": "Taller de tramado de dirección de autos",
+      "address": "3JXX+F43, Porvenir, La Habana, Cuba",
+      "rating": 4,
+      "reviews": 1,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJV6hjHR97zYgR08WynoLT4yc&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.0986429,
+        "longitude": -82.3522158
+      },
+      "type": "Auto repair shop",
+      "types": [
+        "Auto repair shop"
+      ],
+      "open_state": "Closed",
+      "hours": "Closed · Opens 9 AM Mon",
+      "open_hours": {
+        "friday": "9 AM–3 PM",
+        "saturday": "Closed",
+        "sunday": "Closed",
+        "monday": "9 AM–3 PM",
+        "tuesday": "9 AM–3 PM",
+        "wednesday": "9 AM–3 PM",
+        "thursday": "9 AM–3 PM"
+      },
+      "extensions": [
+        {
+          "title": "Amenities",
+          "items": [
+            {
+              "title": "Mechanic",
+              "value": "Has mechanic"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "position": 19,
+      "ludocid": "6233929975410070637",
+      "place_id": "ChIJSaKKM2B3zYgRbRT6qkheg1Y",
+      "kgmid": "/g/11c20t3tc3",
+      "data_id": "0x88cd7760338aa249:0x56835e48aafa146d",
+      "title": "Cuba Ruby",
+      "address": "4JH6+P8R, Calle B, La Habana, Cuba",
+      "phone": "05 3316530",
+      "rating": 4.7,
+      "reviews": 38,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJSaKKM2B3zYgRbRT6qkheg1Y&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.1293707,
+        "longitude": -82.3892219
+      },
+      "type": "Taxi service",
+      "types": [
+        "Taxi service"
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGnmkd8tneM9tqVSL39JsWS46aG2ohB4-cniukHDjZgFjIWS-_XOMNWLQqgfWr_V2RCNT4_MeXEQ5TxAbJOU8azLfLk8kM45SlcfaLWyKSsAoDGxHx26RS6Q2Y6PjZAf0qTVZTMFw=w122-h92-k-no"
+    },
+    {
+      "position": 20,
+      "ludocid": "16874764818119399560",
+      "place_id": "ChIJ83X-FWuf04gRiBhEHDI1L-o",
+      "kgmid": "/g/11g9grsw22",
+      "data_id": "0x88d39f6b15fe75f3:0xea2f35321c441888",
+      "title": "Havana 60 Classic Cars Tours",
+      "address": "Km 23 Autop. Sur, Varadero, Cuba",
+      "phone": "05 9247429",
+      "rating": 4.6,
+      "reviews": 18,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJ83X-FWuf04gRiBhEHDI1L-o&q=Lugares+para+servicio+para+autos+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "https://www.havana60.com/",
+      "domain": "havana60.com",
+      "gps_coordinates": {
+        "latitude": 23.1988209,
+        "longitude": -81.14511569999999
+      },
+      "type": "Tour operator",
+      "types": [
+        "Tour operator"
+      ],
+      "open_state": "Open",
+      "hours": "Open 24 hours",
+      "open_hours": {
+        "friday": "Open 24 hours",
+        "saturday": "Open 24 hours",
+        "sunday": "Open 24 hours",
+        "monday": "Open 24 hours",
+        "tuesday": "Open 24 hours",
+        "wednesday": "Open 24 hours",
+        "thursday": "Open 24 hours"
+      },
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFP_MNjFrQTWobWgqG7_s53padsYrDIqhG6PydoSsX8WL0lIZq4LplNaqufFQuJzwUMfuz-fIhD6IDORnmmb8Xf1ySy-jt4y5zz6CwEdMFX5xFluhRVyT1b5zSbeTrvk7B4wZih=w163-h92-k-no"
+    }
+  ],
+  "total_results": 20
+}

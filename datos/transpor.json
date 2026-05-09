@@ -1,0 +1,680 @@
+{
+  "query": "Lugares para rentar transporte para el  trurismo ",
+  "location": "Havana Cuba",
+  "local_results": [
+    {
+      "position": 1,
+      "ludocid": "15723655972689961800",
+      "place_id": "ChIJW1GIhwV3zYgRSGOitsylNdo",
+      "kgmid": "/g/11q_35k0y4",
+      "data_id": "0x88cd77058788515b:0xda35a5ccb6a26348",
+      "title": "Transtur S.A",
+      "address": "Calle L entre Calle 23 &, Calle 25, La Habana, Cuba",
+      "rating": 2.6,
+      "reviews": 10,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJW1GIhwV3zYgRSGOitsylNdo&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.1194872,
+        "longitude": -82.40809809999999
+      },
+      "type": "Corporate office",
+      "types": [
+        "Corporate office"
+      ],
+      "hours": "Open now",
+      "extensions": [
+        {
+          "title": "Amenities",
+          "items": [
+            {
+              "title": "Restroom",
+              "value": "Has restroom"
+            }
+          ]
+        }
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEFCBKOlDRRzhkV8F_avs8tLkYlZAxxIMZpPlyfOyzOxBeD-FEz_uaeUyhGTRUq9N1RsMNUPQFWdx1QgunfYaoeXwWulVq6TFdbAmW4Mmbl7xEIx2uqdOa957PhKIMjVJIJqKwV=w80-h106-k-no"
+    },
+    {
+      "position": 2,
+      "ludocid": "10260989999180824433",
+      "place_id": "ChIJP30wM995zYgRcT8CCQpcZo4",
+      "kgmid": "/g/11r9g4c5wf",
+      "data_id": "0x88cd79df33307d3f:0x8e665c0a09023f71",
+      "title": "Casa Matrix Transtur",
+      "address": "Calle 19 &, Calle J, La Habana, Cuba",
+      "rating": 4,
+      "reviews": 4,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJP30wM995zYgRcT8CCQpcZo4&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "https://www.transtur.net/",
+      "domain": "transtur.net",
+      "gps_coordinates": {
+        "latitude": 23.1405308,
+        "longitude": -82.3868497
+      },
+      "type": "Corporate office",
+      "types": [
+        "Corporate office"
+      ],
+      "open_state": "Open",
+      "hours": "Open 24 hours",
+      "open_hours": {
+        "friday": "Open 24 hours",
+        "saturday": "Open 24 hours",
+        "sunday": "Open 24 hours",
+        "monday": "Open 24 hours",
+        "tuesday": "Open 24 hours",
+        "wednesday": "Open 24 hours",
+        "thursday": "Open 24 hours"
+      },
+      "extensions": [
+        {
+          "title": "Amenities",
+          "items": [
+            {
+              "title": "Restroom",
+              "value": "Has restroom"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "position": 3,
+      "ludocid": "6233929975410070637",
+      "place_id": "ChIJSaKKM2B3zYgRbRT6qkheg1Y",
+      "kgmid": "/g/11c20t3tc3",
+      "data_id": "0x88cd7760338aa249:0x56835e48aafa146d",
+      "title": "Cuba Ruby",
+      "address": "4JH6+P8R, Calle B, La Habana, Cuba",
+      "phone": "05 3316530",
+      "rating": 4.7,
+      "reviews": 38,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJSaKKM2B3zYgRbRT6qkheg1Y&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.1293707,
+        "longitude": -82.3892219
+      },
+      "type": "Taxi service",
+      "types": [
+        "Taxi service"
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHkkIgYYwl-LcfE35TP6UZb4c1oKSr7G0sFwJAQGav3eMJUQfAYLFGrruRIugHn-NMGGbMyBdVV_cvOq7gAE6s4FNCwGPVCoVoKdSaYNHvaMsS9mY1GYtl8sj9UejnNYLp4EOHjdFofo4z0=w80-h106-k-no"
+    },
+    {
+      "position": 4,
+      "ludocid": "17252786867946715317",
+      "place_id": "ChIJ_S6wfgB3zYgRtfh8ST82bu8",
+      "kgmid": "/g/11mrg8c9m1",
+      "data_id": "0x88cd77007eb02efd:0xef6e363f497cf8b5",
+      "title": "GESTOCUBA TAXIS",
+      "address": "4H6H+6W5, Calle 27, La Habana, Cuba",
+      "phone": "05 5396473",
+      "rating": 5,
+      "reviews": 17,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJ_S6wfgB3zYgRtfh8ST82bu8&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.1105056,
+        "longitude": -82.42012919999999
+      },
+      "type": "Taxi service",
+      "types": [
+        "Taxi service"
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGWlxvNZgt-mc9WuT93FYpHUBJcufi7ZIrv4DvTR99BWzY-ftICXARcq4hpqs4mv8bz0MjkYYjv5gxsW1MedPLmjbxwfE5kvb5-hBD9wP0oX47oCHYYUXDl6DcaMRO3_ASOzDlzyf1z6jY=w92-h92-k-no"
+    },
+    {
+      "position": 5,
+      "ludocid": "2424510396726406886",
+      "place_id": "ChIJ45AyCNp5zYgR5m4eN1yXpSE",
+      "kgmid": "/g/1tlw9wg4",
+      "data_id": "0x88cd79da083290e3:0x21a5975c371e6ee6",
+      "title": "Cubatur",
+      "address": "4JQ8+WRX, La Habana, Cuba",
+      "phone": "(07) 8384597",
+      "rating": 2.8,
+      "reviews": 151,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJ45AyCNp5zYgR5m4eN1yXpSE&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://cubatur.tur.cu/",
+      "domain": "cubatur.tur.cu",
+      "gps_coordinates": {
+        "latitude": 23.1398507,
+        "longitude": -82.3829062
+      },
+      "type": "Travel services",
+      "types": [
+        "Travel services",
+        "Travel"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 8 PM",
+      "open_hours": {
+        "friday": "9 AM–8 PM",
+        "saturday": "Closed",
+        "sunday": "Closed",
+        "monday": "9 AM–8 PM",
+        "tuesday": "9 AM–8 PM",
+        "wednesday": "9 AM–8 PM",
+        "thursday": "Closed"
+      },
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGgClt2mq80WVrTUbMV0iOQOtyaAO3E-gA6n1N_dn_OSEMwRCkKgQ6O0eDB7WXczaF2H4jJAeB4ovUxz1TRyiz_G_I3OI9AzmsYCYpk4TNeVmNYddLIlQ_xmopvI79TRM9GaIXz=w122-h92-k-no"
+    },
+    {
+      "position": 6,
+      "ludocid": "10211096430693452266",
+      "place_id": "ChIJFfKGh-xzzYgR6gm-XhoatY0",
+      "kgmid": "/g/11dxd1kpt9",
+      "data_id": "0x88cd73ec8786f215:0x8db51a1a5ebe09ea",
+      "title": "CubaCar",
+      "address": "3GR4+H86, La Habana, Cuba",
+      "phone": "(07) 2041707",
+      "rating": 1.7,
+      "reviews": 139,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJFfKGh-xzzYgR6gm-XhoatY0&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://www.rentcarcuba.com/",
+      "domain": "rentcarcuba.com",
+      "gps_coordinates": {
+        "latitude": 23.0914039,
+        "longitude": -82.4942411
+      },
+      "type": "Car rental agency",
+      "types": [
+        "Car rental agency"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 8 PM",
+      "open_hours": {
+        "friday": "9 AM–8 PM",
+        "saturday": "9 AM–8 PM",
+        "sunday": "9 AM–8 PM",
+        "monday": "9 AM–8 PM",
+        "tuesday": "9 AM–8 PM",
+        "wednesday": "9 AM–8 PM",
+        "thursday": "9 AM–8 PM"
+      },
+      "extensions": [
+        {
+          "title": "Accessibility",
+          "items": [
+            {
+              "title": "Wheelchair accessible entrance",
+              "value": "Has wheelchair accessible entrance"
+            },
+            {
+              "title": "Wheelchair accessible parking lot",
+              "value": "Has wheelchair accessible parking lot"
+            }
+          ]
+        }
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHGdXAir-cJDa8oqmH0c0prL6tvyN-bHzOO7zMTO3ce70PY6hPjtGN-9it7caSzOaVuvkVGxa41RD_38dZ5Icth9wO8hjqoYkrBiIppuTTsu1yf1pmLmbEEhnGa-iEU1PUunEwKLg=w163-h92-k-no"
+    },
+    {
+      "position": 7,
+      "ludocid": "17733679165307781859",
+      "place_id": "ChIJH854LN55zYgR44LqaD6vGvY",
+      "kgmid": "/g/11c6crg7q7",
+      "data_id": "0x88cd79de2c78ce1f:0xf61aaf3e68ea82e3",
+      "title": "National Bus Station",
+      "address": "4JG8+PMV, La Habana, Cuba",
+      "phone": "(07) 8709401 ext. 100",
+      "rating": 3.2,
+      "reviews": 251,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJH854LN55zYgR44LqaD6vGvY&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.1268569,
+        "longitude": -82.3833401
+      },
+      "type": "Travel agency",
+      "types": [
+        "Travel agency"
+      ],
+      "open_state": "Open",
+      "hours": "Open 24 hours",
+      "open_hours": {
+        "friday": "Open 24 hours",
+        "saturday": "Open 24 hours",
+        "sunday": "Open 24 hours",
+        "monday": "Open 24 hours",
+        "tuesday": "Open 24 hours",
+        "wednesday": "Open 24 hours",
+        "thursday": "Open 24 hours"
+      },
+      "extensions": [
+        {
+          "title": "Accessibility",
+          "items": [
+            {
+              "title": "Wheelchair accessible entrance",
+              "value": "Has wheelchair accessible entrance"
+            },
+            {
+              "title": "Wheelchair accessible parking lot",
+              "value": "Has wheelchair accessible parking lot"
+            }
+          ]
+        }
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFStM4MdUqAFJIqvLIaETxgM8sO4udbWnXIgkFCq4RbouFEJ0bSv13ymG-C3nRlH_WttqYdC5X7QHs0juQNO2EsJjPluOmUQLm8Ny1nw8RfVywVlPfPEcQi22mqHWOnGFko4qSZ=w122-h92-k-no"
+    },
+    {
+      "position": 8,
+      "ludocid": "14832591579646556128",
+      "place_id": "ChIJkwqGMX13zYgR4HdIi3Tz180",
+      "kgmid": "/g/11c72xbpm3",
+      "data_id": "0x88cd777d31860a93:0xcdd7f3748b4877e0",
+      "title": "Bike Rental & Tours Havana",
+      "address": "Calle D, 505 (entre 21 y 23, La Habana, Cuba",
+      "phone": "05 3441231",
+      "rating": 4.7,
+      "reviews": 69,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJkwqGMX13zYgR4HdIi3Tz180&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://www.bikerentalhavana.com/",
+      "domain": "bikerentalhavana.com",
+      "gps_coordinates": {
+        "latitude": 23.13466,
+        "longitude": -82.3913175
+      },
+      "type": "Bicycle rental service",
+      "types": [
+        "Bicycle rental service"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 6 PM",
+      "open_hours": {
+        "friday": "9 AM–6 PM",
+        "saturday": "9 AM–6 PM",
+        "sunday": "9 AM–6 PM",
+        "monday": "9 AM–6 PM",
+        "tuesday": "9 AM–6 PM",
+        "wednesday": "9 AM–6 PM",
+        "thursday": "9 AM–6 PM"
+      },
+      "extensions": [
+        {
+          "title": "Accessibility",
+          "items": [
+            {
+              "title": "Wheelchair accessible entrance",
+              "value": "Has wheelchair accessible entrance"
+            },
+            {
+              "title": "Wheelchair accessible parking lot",
+              "value": "Has wheelchair accessible parking lot"
+            }
+          ]
+        },
+        {
+          "title": "Amenities",
+          "items": [
+            {
+              "title": "Restroom",
+              "value": "Has restroom"
+            }
+          ]
+        }
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAElzY4ZlpAtnJDAWQ0x1m0oKwaLE-jzwMF-5mJUYeW60ydTk83bQpq3S0EDsyBBYJiVq0QWGDVRPai9v9Rd5aVMDAOYVBjeHe8Gv5IsznXjI5IHeMctkxxiMZ9VRtoTN7H4yk8u=w92-h92-k-no"
+    },
+    {
+      "position": 9,
+      "ludocid": "4776257348158929776",
+      "place_id": "ChIJHSpA30d3zYgRcLvcoMCsSEI",
+      "kgmid": "/g/1tcwgsjq",
+      "data_id": "0x88cd7747df402a1d:0x4248acc0a0dcbb70",
+      "title": "Via Rent-A-Car",
+      "address": "4H6Q+JG8, 43, La Habana, Cuba",
+      "phone": "(07) 6469334",
+      "rating": 2.3,
+      "reviews": 90,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJHSpA30d3zYgRcLvcoMCsSEI&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.1115351,
+        "longitude": -82.41117779999999
+      },
+      "type": "Car rental agency",
+      "types": [
+        "Car rental agency"
+      ],
+      "open_state": "Open",
+      "hours": "Open 24 hours",
+      "open_hours": {
+        "friday": "Open 24 hours",
+        "saturday": "Open 24 hours",
+        "sunday": "Open 24 hours",
+        "monday": "Open 24 hours",
+        "tuesday": "Open 24 hours",
+        "wednesday": "Open 24 hours",
+        "thursday": "Open 24 hours"
+      },
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFE3XwGcFcVf0g4yWKXUkq29oJUIWpOz8RWTbSLMUIS2N3Idb5MVsvf8OftQUmjpATd9MxkgEpfT3qY72-R2x38PIJ4tC75cw5dAon30l2zAs9wC1qDWvVwwciyrZ2v1p0kem4=w80-h106-k-no"
+    },
+    {
+      "position": 10,
+      "ludocid": "12162218858369516991",
+      "place_id": "ChIJr0V4aAB5zYgRvwWsDZ3hyKg",
+      "kgmid": "/g/11y6vgv22w",
+      "data_id": "0x88cd7900687845af:0xa8c8e19d0dac05bf",
+      "title": "Taxis colectivos y Privados en Cuba",
+      "address": "info.taxiscolectivoscuba@gmail.com, 968 San Lazaro, La Habana, Cuba",
+      "rating": 5,
+      "reviews": 6,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJr0V4aAB5zYgRvwWsDZ3hyKg&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "https://www.cubalaislaprohibida.org/",
+      "domain": "cubalaislaprohibida.org",
+      "gps_coordinates": {
+        "latitude": 23.1392305,
+        "longitude": -82.3756039
+      },
+      "type": "Taxi service",
+      "types": [
+        "Taxi service"
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEwIhcJEai-5MHRyZaSxlO2mWBAVO-tdX7eoY0yYgkLUOlkwmi-VLMNCVhTnOddnNz45vdHqDZGaFaJWGN2-6bdimCFT-ikN53sF12PkG_qrMhsbckoUY2Zg0BFslesztzeJHup=w163-h92-k-no"
+    },
+    {
+      "position": 11,
+      "ludocid": "12788830191466299493",
+      "place_id": "ChIJVTncIjdxzYgRZcAjD00Ne7E",
+      "kgmid": "/g/1tfwl4f9",
+      "data_id": "0x88cd713722dc3955:0xb17b0d4d0f23c065",
+      "title": "Havanautos",
+      "address": "806 Calle A, La Habana, Cuba",
+      "phone": "(11) 95066-2508",
+      "rating": 1.5,
+      "reviews": 19,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJVTncIjdxzYgRZcAjD00Ne7E&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://transtur.com/",
+      "domain": "transtur.com",
+      "gps_coordinates": {
+        "latitude": 23.0969336,
+        "longitude": -82.44940059999999
+      },
+      "type": "Car rental agency",
+      "types": [
+        "Car rental agency"
+      ],
+      "hours": "Open now",
+      "extensions": [
+        {
+          "title": "Payments",
+          "items": [
+            {
+              "title": "Debit cards",
+              "value": "Accepts debit cards"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "position": 12,
+      "ludocid": "5813561610736819134",
+      "place_id": "ChIJKRuiJmp3zYgRvtvQv3vrrVA",
+      "kgmid": "/g/11c5sr_ztc",
+      "data_id": "0x88cd776a26a21b29:0x50adeb7bbfd0dbbe",
+      "title": "Ruta Bikes",
+      "address": "23°07'47.7\"N 82°24'18., 6, La Habana, Cuba",
+      "phone": "05 2476633",
+      "rating": 4.6,
+      "reviews": 78,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJKRuiJmp3zYgRvtvQv3vrrVA&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://www.rutabikes.com/",
+      "domain": "rutabikes.com",
+      "gps_coordinates": {
+        "latitude": 23.129927,
+        "longitude": -82.405158
+      },
+      "type": "Bicycle rental service",
+      "types": [
+        "Bicycle rental service"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 5 PM",
+      "open_hours": {
+        "friday": "8 AM–5 PM",
+        "saturday": "8 AM–5 PM",
+        "sunday": "Closed",
+        "monday": "8 AM–5 PM",
+        "tuesday": "8 AM–5 PM",
+        "wednesday": "8 AM–5 PM",
+        "thursday": "8 AM–5 PM"
+      },
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAF-kSLWvCb9n6knI1zWyPGzpnCYqVPPNQApVG6ACDjlxpAMqyBKuvnJ4-ClJO45Pm-1AEJj6VmjOV4Q7r9lx1cdto1D5nf5CrYmGzJl7efoNHpo0ohIlKZlOKehK1E36vb8IQfXrA=w80-h120-k-no"
+    },
+    {
+      "position": 13,
+      "ludocid": "14777387941212058919",
+      "place_id": "ChIJUQnTe8J3zYgRJ_UV4AnUE80",
+      "kgmid": "/g/11g0kff757",
+      "data_id": "0x88cd77c27bd30951:0xcd13d409e015f527",
+      "title": "CocheCubaCars",
+      "address": "4H55+CJ4, La Habana, Cuba",
+      "phone": "05 2851128",
+      "rating": 3.3,
+      "reviews": 12,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJUQnTe8J3zYgRJ_UV4AnUE80&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://cochecubacars.com/",
+      "domain": "cochecubacars.com",
+      "gps_coordinates": {
+        "latitude": 23.1085081,
+        "longitude": -82.4409081
+      },
+      "type": "Car rental agency",
+      "types": [
+        "Car rental agency"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 5 PM",
+      "open_hours": {
+        "friday": "9 AM–5 PM",
+        "saturday": "Closed",
+        "sunday": "Closed",
+        "monday": "9 AM–5 PM",
+        "tuesday": "9 AM–5 PM",
+        "wednesday": "9 AM–5 PM",
+        "thursday": "9 AM–5 PM"
+      }
+    },
+    {
+      "position": 14,
+      "ludocid": "8406612737623244807",
+      "place_id": "ChIJp2vIB9Z2zYgRB8BOpr5JqnQ",
+      "kgmid": "/g/11fzfdvx6s",
+      "data_id": "0x88cd76d607c86ba7:0x74aa49bea64ec007",
+      "title": "Cubacar",
+      "address": "4H68+JXP, 62, La Habana, Cuba",
+      "rating": 1.8,
+      "reviews": 21,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJp2vIB9Z2zYgRB8BOpr5JqnQ&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.1115897,
+        "longitude": -82.4325468
+      },
+      "type": "Car rental agency",
+      "types": [
+        "Car rental agency"
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAEhmnZMQbs3CQUSbjhVp-DbdhcpFIZ7uHwulI0DMmxLz88FUaCCJuZDP1OjdgwKiFs1pPphqIne7viGAMKK988hkZK0-QjTIcF1NNt96lVMd_4m3zx3acPxOLg_8tTBUa2OLyBE=w163-h92-k-no"
+    },
+    {
+      "position": 15,
+      "ludocid": "10327061233019224715",
+      "place_id": "ChIJ_9EcB313zYgRi4LR73kXUY8",
+      "kgmid": "/g/11gr644w5t",
+      "data_id": "0x88cd777d071cd1ff:0x8f511779efd1828b",
+      "title": "Car Rental office, 3era y Paseo",
+      "address": "Calle 3era esqunina a, Paseo, La Habana, Cuba",
+      "phone": "(07) 8375586",
+      "rating": 2.2,
+      "reviews": 25,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJ_9EcB313zYgRi4LR73kXUY8&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.1397921,
+        "longitude": -82.4014438
+      },
+      "type": "Corporate office",
+      "types": [
+        "Corporate office"
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAHfE6SLMvA970R_ws5msjHehvOuv7vzR5jARH3WRzGArLy5kWtwazNidyCN-D-fUGhEGomtSzEZDGyTNSCFyEZXUI7twBTRBfF3qF4SZSWJixDDJ3Te0kkDXTj7hTW6z2HxpsG0XQ=w80-h106-k-no"
+    },
+    {
+      "position": 16,
+      "ludocid": "11687320948323989439",
+      "place_id": "ChIJtVnb8NJ2zYgRvzfV_Hq0MaI",
+      "kgmid": "/g/11b6__6r1w",
+      "data_id": "0x88cd76d2f0db59b5:0xa231b47afcd537bf",
+      "title": "Servicios Global SA",
+      "address": "3ra y 76, Miramar Trade Center, 76, La Habana, Cuba",
+      "phone": "(07) 2048244",
+      "rating": 3.9,
+      "reviews": 11,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJtVnb8NJ2zYgRvzfV_Hq0MaI&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://serviciosglobal.com/",
+      "domain": "serviciosglobal.com",
+      "gps_coordinates": {
+        "latitude": 23.1085139,
+        "longitude": -82.4409142
+      },
+      "type": "Travel agency",
+      "types": [
+        "Travel agency"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 5 PM",
+      "open_hours": {
+        "friday": "9 AM–5 PM",
+        "saturday": "Closed",
+        "sunday": "Closed",
+        "monday": "9 AM–5 PM",
+        "tuesday": "9 AM–5 PM",
+        "wednesday": "9 AM–5 PM",
+        "thursday": "9 AM–5 PM"
+      },
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGpkpX-DGrolvgJmhtOSUhvhn939O8SRfnZMg8mwFWUDGpjevste0CGtU0YgXb1MQNel6BP3XPe8gGSc52S2lZRsF_03Dm6k0lwUyljAGCbXnqEkpWN1jtN_k8XPdH5A8B24RgdMA=w184-h92-k-no"
+    },
+    {
+      "position": 17,
+      "ludocid": "15492422227337851563",
+      "place_id": "ChIJDSEYZbF5zYgRq7LW8u4jANc",
+      "kgmid": "/g/11f_j31xsh",
+      "data_id": "0x88cd79b16518210d:0xd70023eef2d6b2ab",
+      "title": "Havana Bikes",
+      "address": "61, Consulado, La Habana 10200, Cuba",
+      "phone": "05 3912608",
+      "rating": 4.9,
+      "reviews": 82,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJDSEYZbF5zYgRq7LW8u4jANc&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "http://www.havana-bikes.com/",
+      "domain": "havana-bikes.com",
+      "gps_coordinates": {
+        "latitude": 23.1429373,
+        "longitude": -82.3595199
+      },
+      "type": "Bicycle rental service",
+      "types": [
+        "Bicycle rental service"
+      ],
+      "open_state": "Open",
+      "hours": "Open · Closes 7 PM",
+      "open_hours": {
+        "friday": "8 AM–7 PM",
+        "saturday": "8 AM–7 PM",
+        "sunday": "8 AM–7 PM",
+        "monday": "8 AM–7 PM",
+        "tuesday": "8 AM–7 PM",
+        "wednesday": "8 AM–7 PM",
+        "thursday": "8 AM–7 PM"
+      },
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAFdVw7oT6tW3IXc00_Jw0UaoWmGuiAVydsaLM8gf05byFgedKj3s6scEoNY8wZGaf6J2vCtBPKxFIyfcV3Ph4danXXKCZZRA9gYmQGfQQanvjJOLqPm6wpfkbvnUBgskWbHtC-C=w80-h106-k-no"
+    },
+    {
+      "position": 18,
+      "ludocid": "7433111927307817321",
+      "place_id": "ChIJo0SqG8BvzYgRadHmYuq3J2c",
+      "kgmid": "/g/11sbk_gg6m",
+      "data_id": "0x88cd6fc01baa44a3:0x6727b7ea62e6d169",
+      "title": "Havanautos",
+      "address": "XHXR+FM5, La Habana, Cuba",
+      "rating": 1.3,
+      "reviews": 12,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJo0SqG8BvzYgRadHmYuq3J2c&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 22.998634,
+        "longitude": -82.4082794
+      },
+      "type": "Car rental agency",
+      "types": [
+        "Car rental agency"
+      ],
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAF1Bu95-dI4_x4SbwMc_LP_Uf3p6Rc7CbJCDeTAR3mXYH5ikllMvnTSD_X7yo0Hum5nwqnSMt2_B4tLhYzOP2Uw4O48_xjjte2qmTeOuxbFlV09nTbimh7AIl0Wuhr0EhBDpCKH=w122-h92-k-no"
+    },
+    {
+      "position": 19,
+      "ludocid": "7693320775054972022",
+      "place_id": "ChIJlUlb2KN5zYgRdtRI5HsqxGo",
+      "kgmid": "/g/1vcl4k6p",
+      "data_id": "0x88cd79a3d85b4995:0x6ac42a7be448d476",
+      "title": "Rent a Car",
+      "address": "4JHX+MPP, La Habana, Cuba",
+      "rating": 2.6,
+      "reviews": 5,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJlUlb2KN5zYgRdtRI5HsqxGo&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "gps_coordinates": {
+        "latitude": 23.1292152,
+        "longitude": -82.35067769999999
+      },
+      "type": "Car rental agency",
+      "types": [
+        "Car rental agency"
+      ],
+      "hours": "Open now"
+    },
+    {
+      "position": 20,
+      "ludocid": "12181485700759070578",
+      "place_id": "ChIJIUAAbi1xzYgRcqc-XrRUDak",
+      "kgmid": "/g/11g6bfrh3p",
+      "data_id": "0x88cd712d6e004021:0xa90d54b45e3ea772",
+      "title": "booktocuba car pickup",
+      "address": "4H35+CC2, 5 B, La Habana, Cuba",
+      "rating": 2.9,
+      "reviews": 7,
+      "reviews_link": "https://search.google.com/local/reviews?placeid=ChIJIUAAbi1xzYgRcqc-XrRUDak&q=Lugares+para+rentar+transporte+para+el+turismo+Habana+Cuba&hl=en&gl=US",
+      "is_unclaimed_listing": true,
+      "website": "https://booktocuba.com/",
+      "domain": "booktocuba.com",
+      "gps_coordinates": {
+        "latitude": 23.1035048,
+        "longitude": -82.4414814
+      },
+      "type": "Car rental agency",
+      "types": [
+        "Car rental agency"
+      ],
+      "hours": "Open now",
+      "thumbnail": "https://lh3.googleusercontent.com/gps-cs-s/APNQkAGfWFHy3GKZFwQasnor5oAwxAr4uC-yqpOmSuZdGKGumZBjzSR1tgsT4fmmqmUXZMEiSLVr1GwbdcpgNUKT6hspEzvyygNy__1OFJLk3C4vwJH5my9jQO-NI2xuDlAWG-7Lg4ycjQ=w163-h92-k-no"
+    }
+  ],
+  "total_results": 20
+}
