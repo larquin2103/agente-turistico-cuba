@@ -2,6 +2,12 @@ import logging
 import re
 import requests
 import os
+# Proxy para Telegram (red corporativa)
+PROXY_URL = "http://10.11.0.9:8080"
+
+# localhost nunca usa proxy
+os.environ["NO_PROXY"] = "localhost,127.0.0.1"
+os.environ["no_proxy"] = "localhost,127.0.0.1"
 import chromadb
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import KeyboardButton, ReplyKeyboardMarkup
@@ -14,7 +20,7 @@ from media import obtener_imagen, construir_caption
 # ─────────────────────────────────────────────
 # CONFIGURACIÓN — edita solo estas líneas
 # ─────────────────────────────────────────────
-TOKEN   = "8786169317:AAGp83gwSxD3SHupg7Y1pzPogc9YtQ6XtIs"   # ← reemplaza esto
+TOKEN   = "8177591854:AAHuTtU-G7kWYZqOZwzDduXYWiNax2Xswns"   # ← reemplaza esto
 API_URL = "http://localhost:8000"
 API_KEY = "turismo-secret-2024"
 DB_PATH = "C:/Users/larquin/agente-turistico/db"
@@ -157,6 +163,9 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handler principal — detecta cercanía o responde con RAG."""
     pregunta   = update.message.text
     usuario_id = str(update.message.from_user.id)
+
+    print(f">>> MENSAJE RECIBIDO: '{pregunta}' de usuario {usuario_id}")
+    logging.info(f">>> LLAMANDO API con: {pregunta}")
 
     palabras_cercania = [
         "cerca", "cercano", "próximo", "nearby", "close",
@@ -353,7 +362,9 @@ async def manejar_botones(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ──────────────────────────────────────────────────────────
 
 def main():
-    app = Application.builder().token(TOKEN).build()
+    from telegram.request import HTTPXRequest
+    request = HTTPXRequest(proxy=PROXY_URL)
+    app = Application.builder().token(TOKEN).request(request).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.LOCATION, manejar_ubicacion))
     app.add_handler(CallbackQueryHandler(manejar_botones))
