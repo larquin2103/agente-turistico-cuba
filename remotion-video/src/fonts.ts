@@ -7,9 +7,21 @@ let loaded = false;
 export const loadFonts = () => {
   if (loaded) return;
   loaded = true;
-  loadInter();
-  loadPlayfair();
-  loadJetBrains();
+  loadInter("normal", {
+    weights: ["400", "500", "600", "700"],
+    subsets: ["latin"],
+    ignoreTooManyRequestsWarning: true,
+  });
+  loadPlayfair("normal", {
+    weights: ["400", "500", "600", "700"],
+    subsets: ["latin"],
+    ignoreTooManyRequestsWarning: true,
+  });
+  loadJetBrains("normal", {
+    weights: ["400", "500", "600", "700"],
+    subsets: ["latin"],
+    ignoreTooManyRequestsWarning: true,
+  });
 };
 
 export const fontFamily = {
