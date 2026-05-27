@@ -71,9 +71,9 @@ export const WhatsAppChat: React.FC<{
   const phoneWidth = orientation === "portrait" ? 420 : 460;
   const phoneHeight = orientation === "portrait" ? 620 : 640;
 
-  // Stagger messages
-  const messageDelay = 30;
-  const messageInterval = 38;
+  // Stagger messages — más lento para dar tiempo a leer
+  const messageDelay = 24;
+  const messageInterval = 54;
 
   return (
     <div style={visualBox(orientation)}>

@@ -1,13 +1,13 @@
 import type { Orientation } from "../../Video";
 
-export const visualBox = (orientation: Orientation): React.CSSProperties => ({
+// El visual llena el contenedor que le asigna SceneRenderer (columna derecha
+// en horizontal, banda central en vertical). Así nunca se superpone al texto.
+export const visualBox = (_orientation?: Orientation): React.CSSProperties => ({
   position: "absolute",
-  top: orientation === "portrait" ? "32%" : "30%",
-  left: 0,
-  right: 0,
-  bottom: orientation === "portrait" ? "42%" : "32%",
+  inset: 0,
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: orientation === "portrait" ? "0 60px" : "0 90px",
+  padding: 12,
+  overflow: "hidden",
 });

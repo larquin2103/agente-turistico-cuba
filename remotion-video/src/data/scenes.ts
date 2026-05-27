@@ -39,13 +39,14 @@ export const actMeta: Record<
   CIERRE: { badge: "#a84cc9", text: "CIERRE", emoji: "🎯" },
 };
 
-export const scenes: Scene[] = [
+type RawScene = Omit<Scene, "time">;
+
+const rawScenes: RawScene[] = [
   {
     id: 1,
     act: "INTRO",
     actLabel: "INTRO",
-    time: "0:00 – 0:08",
-    duration: 8,
+    duration: 9,
     title: "El problema que nadie quiere vivir",
     visual:
       "Pantalla negra. Teléfono sonando a las 11:30 PM. Nadie contesta. Tres mensajes de WhatsApp sin respuesta con ticks grises.",
@@ -60,8 +61,7 @@ export const scenes: Scene[] = [
     id: 2,
     act: "INTRO",
     actLabel: "INTRO",
-    time: "0:08 – 0:14",
-    duration: 6,
+    duration: 8,
     title: "La oportunidad perdida (en números)",
     visual:
       "Contador en rojo: llamadas perdidas, mensajes sin responder, citas canceladas. Gráfica de ingresos bajando.",
@@ -76,8 +76,7 @@ export const scenes: Scene[] = [
     id: 3,
     act: "SOLUCION",
     actLabel: "SOLUCIÓN",
-    time: "0:14 – 0:22",
-    duration: 8,
+    duration: 9,
     title: "Presentamos la solución",
     visual:
       "Transición a azul brillante. Logo del producto. WhatsApp y Telegram abiertos. Respuesta instantánea en 2 segundos.",
@@ -92,8 +91,7 @@ export const scenes: Scene[] = [
     id: 4,
     act: "SOLUCION",
     actLabel: "SOLUCIÓN",
-    time: "0:22 – 0:30",
-    duration: 8,
+    duration: 9,
     title: "Cómo funciona",
     visual:
       "Animación: documentos PDF entrando a una caja → cerebro con IA → burbuja de chat respondiendo.",
@@ -108,8 +106,7 @@ export const scenes: Scene[] = [
     id: 5,
     act: "CLINICA_DENTAL",
     actLabel: "CLÍNICA DENTAL",
-    time: "0:30 – 0:40",
-    duration: 10,
+    duration: 12,
     title: "Paciente a medianoche",
     visual:
       "Persona con dolor de muela a las 12 AM escribe en WhatsApp. El agente responde en 2 segundos con horarios y precio.",
@@ -124,8 +121,7 @@ export const scenes: Scene[] = [
     id: 6,
     act: "CLINICA_DENTAL",
     actLabel: "CLÍNICA DENTAL",
-    time: "0:40 – 0:50",
-    duration: 10,
+    duration: 12,
     title: "Citas confirmadas = cero cancelaciones",
     visual:
       "Pantalla dividida: ANTES (citas canceladas) / DESPUÉS (agente enviando recordatorios automáticos).",
@@ -140,8 +136,7 @@ export const scenes: Scene[] = [
     id: 7,
     act: "CLINICA_DENTAL",
     actLabel: "CLÍNICA DENTAL",
-    time: "0:50 – 1:00",
-    duration: 10,
+    duration: 12,
     title: "Responde preguntas repetitivas",
     visual:
       "Asistente real agotada respondiendo lo mismo. Corte: el agente responde — precios, horarios, formas de pago.",
@@ -156,8 +151,7 @@ export const scenes: Scene[] = [
     id: 8,
     act: "CLINICA_DENTAL",
     actLabel: "CLÍNICA DENTAL",
-    time: "1:00 – 1:08",
-    duration: 8,
+    duration: 9,
     title: "Resultado clínica dental",
     visual:
       "Dashboard: +40% citas, -65% cancelaciones, 0 llamadas perdidas. Dentista sonriendo.",
@@ -172,8 +166,7 @@ export const scenes: Scene[] = [
     id: 9,
     act: "TURISMO",
     actLabel: "TURISMO",
-    time: "1:08 – 1:18",
-    duration: 10,
+    duration: 12,
     title: "El viajero perdido en el check-in",
     visual:
       "Aeropuerto, 2 AM. Viajero confundido escribe a la agencia. El agente responde al instante con todos los detalles del hotel.",
@@ -188,8 +181,7 @@ export const scenes: Scene[] = [
     id: 10,
     act: "TURISMO",
     actLabel: "TURISMO",
-    time: "1:18 – 1:28",
-    duration: 10,
+    duration: 12,
     title: "Ventas mientras duermes",
     visual:
       "Familia navegando paquetes a las 10 PM. Preguntan por Cancún. El agente cierra la venta.",
@@ -204,8 +196,7 @@ export const scenes: Scene[] = [
     id: 11,
     act: "TURISMO",
     actLabel: "TURISMO",
-    time: "1:28 – 1:38",
-    duration: 10,
+    duration: 11,
     title: "Soporte completo durante el viaje",
     visual:
       "Timeline: reserva → documentos → check-in → preguntas en destino → post-viaje. El agente presente en cada etapa.",
@@ -220,8 +211,7 @@ export const scenes: Scene[] = [
     id: 12,
     act: "TURISMO",
     actLabel: "TURISMO",
-    time: "1:38 – 1:46",
-    duration: 8,
+    duration: 9,
     title: "Resultado agencia de turismo",
     visual:
       "Dashboard: +55% conversión, 100% mensajes respondidos, 4.9★ satisfacción.",
@@ -236,8 +226,7 @@ export const scenes: Scene[] = [
     id: 13,
     act: "VENTAJAS",
     actLabel: "VENTAJAS",
-    time: "1:46 – 1:56",
-    duration: 10,
+    duration: 11,
     title: "Por qué WhatsApp y Telegram",
     visual:
       "Comparativa: App nueva (nadie la descarga) vs WhatsApp (todos la tienen). 93% de penetración en Latinoamérica.",
@@ -252,8 +241,7 @@ export const scenes: Scene[] = [
     id: 14,
     act: "VENTAJAS",
     actLabel: "VENTAJAS",
-    time: "1:56 – 2:04",
-    duration: 8,
+    duration: 9,
     title: "Solo sabe lo que tú le enseñas",
     visual:
       "El agente responde SOLO con información de la empresa. 'No tengo esa información, te pongo en contacto con un asesor.'",
@@ -268,8 +256,7 @@ export const scenes: Scene[] = [
     id: 15,
     act: "VENTAJAS",
     actLabel: "VENTAJAS",
-    time: "2:04 – 2:12",
-    duration: 8,
+    duration: 10,
     title: "Crece con tu negocio",
     visual:
       "Un bot → 10 conversaciones. Mismo bot → 500 conversaciones simultáneas. Sin contratar más gente.",
@@ -284,8 +271,7 @@ export const scenes: Scene[] = [
     id: 16,
     act: "CIERRE",
     actLabel: "CIERRE",
-    time: "2:12 – 2:20",
-    duration: 8,
+    duration: 9,
     title: "Para cualquier tipo de negocio",
     visual:
       "Carrusel: clínica dental · agencia de turismo · restaurante · inmobiliaria · academia · spa · tienda · consultorio.",
@@ -300,8 +286,7 @@ export const scenes: Scene[] = [
     id: 17,
     act: "CIERRE",
     actLabel: "CIERRE",
-    time: "2:20 – 2:30",
-    duration: 10,
+    duration: 11,
     title: "Agenda tu demo gratis",
     visual:
       "Fondo negro elegante. Número de WhatsApp. QR code. 'Agenda tu demo gratis'. 'Tu agente listo en 15 minutos'.",
@@ -313,6 +298,21 @@ export const scenes: Scene[] = [
     bg: "#050505",
   },
 ];
+
+const fmt = (totalSec: number): string => {
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+};
+
+// Calcula el rango de tiempo de cada escena a partir de su duración
+let _acc = 0;
+export const scenes: Scene[] = rawScenes.map((s) => {
+  const start = _acc;
+  const end = _acc + s.duration;
+  _acc = end;
+  return { ...s, time: `${fmt(start)} – ${fmt(end)}` };
+});
 
 export const totalDurationSeconds = scenes.reduce(
   (acc, s) => acc + s.duration,
