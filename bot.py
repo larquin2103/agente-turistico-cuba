@@ -1,6 +1,7 @@
 import logging
 import re
 import os
+import asyncio
 import httpx
 from dotenv import load_dotenv
 
@@ -59,7 +60,6 @@ def buscar_datos_lugar(nombre: str) -> dict:
         resultado = col.get(where={"title": nombre})
 
         if not resultado["documents"]:
-            # Búsqueda parcial en texto
             todos = col.get(limit=200)
             for i, doc in enumerate(todos["documents"]):
                 if nombre.lower() in doc.lower():
@@ -91,6 +91,13 @@ def _meta_a_dict(meta: dict, doc: str, nombre: str) -> dict:
     }
 
 
+async def keep_typing(chat_id: int, bot, stop_event: asyncio.Event):
+    """Envía 'escribiendo...' cada 4 s mientras el LLM procesa la respuesta."""
+    while not stop_event.is_set():
+        await bot.send_chat_action(chat_id=chat_id, action="typing")
+        await asyncio.sleep(4)
+
+
 # ──────────────────────────────────────────────────────────
 # HANDLERS DE TELEGRAM
 # ──────────────────────────────────────────────────────────
@@ -102,15 +109,72 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         one_time_keyboard=False
     )
     await update.message.reply_text(
-        "🇨🇺 Cuba Travel Guide\n\n"
+        "🇨🇺 *Cuba Travel Guide*\n\n"
         "🇪🇸 Hola, soy tu guía turístico de Cuba. ¡Pregúntame en español!\n"
         "🇬🇧 Hi, I'm your Cuba travel guide. Ask me anything in English!\n"
         "🇮🇹 Ciao, sono la tua guida turistica di Cuba. Chiedimi in italiano!\n"
         "🇫🇷 Bonjour, je suis votre guide touristique de Cuba. Posez vos questions en français!\n"
         "🇩🇪 Hallo, ich bin dein Reiseführer für Kuba. Frag mich auf Deutsch!\n"
         "🇧🇷 Olá, sou seu guia turístico de Cuba. Pergunte em português!\n\n"
-        "📍 Share your location to find nearby places",
+        "📍 Comparte tu ubicación para encontrar lugares cercanos\n"
+        "❓ Escribe /ayuda para ver qué puedo hacer",
+        parse_mode="Markdown",
         reply_markup=teclado
+    )
+
+
+async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Muestra guía de uso del bot."""
+    texto = (
+        "🇨🇺 *Cuba Travel Guide — ¿Qué puedo hacer?*\n\n"
+        "Puedes preguntarme en *cualquier idioma*:\n\n"
+        "🍽️ *Gastronomía:*\n"
+        "  \"¿Dónde comer en La Habana Vieja?\"\n"
+        "  \"Best restaurants near Vedado\"\n\n"
+        "🏛️ *Cultura e historia:*\n"
+        "  \"¿Qué museos hay en La Habana?\"\n"
+        "  \"Musei e monumenti all'Avana\"\n\n"
+        "🌿 *Naturaleza:*\n"
+        "  \"Parques naturales cerca del Vedado\"\n"
+        "  \"Where can I see nature in Havana?\"\n\n"
+        "🚌 *Transporte:*\n"
+        "  \"¿Cómo llegar al aeropuerto?\"\n"
+        "  \"Car rental in Havana\"\n\n"
+        "📍 *Lugares cercanos:*\n"
+        "  Comparte tu ubicación GPS → te muestro los 3 más cercanos\n"
+        "  \"¿Qué hay cerca del Vedado?\"\n\n"
+        "🗺️ *Mapas offline:*\n"
+        "  Descarga KML o GPX para navegar sin internet en OsmAnd\n\n"
+        "📋 *Comandos:*\n"
+        "  /start — Reiniciar el bot\n"
+        "  /ayuda — Esta ayuda\n"
+        "  /reset — Borrar historial de conversación\n\n"
+        "💡 El bot recuerda el contexto de la conversación. "
+        "Puedes hacer preguntas de seguimiento como \"¿Y el horario?\" o \"Tell me more\""
+    )
+    await update.message.reply_text(texto, parse_mode="Markdown")
+
+
+async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Reinicia el historial de conversación del usuario."""
+    usuario_id = str(update.message.from_user.id)
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            await client.post(
+                f"{API_URL}/reset",
+                json={"usuario_id": usuario_id},
+                headers={"x-api-key": API_KEY}
+            )
+    except Exception as e:
+        logging.warning(f"No se pudo limpiar historial en API: {e}")
+
+    context.user_data.clear()
+    ultimos_lugares.pop(usuario_id, None)
+
+    await update.message.reply_text(
+        "🔄 Conversación reiniciada. ¡Hola de nuevo!\n"
+        "¿En qué puedo ayudarte hoy? 🇨🇺"
     )
 
 
@@ -133,6 +197,7 @@ async def manejar_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 json={"lat": lat, "lng": lng, "usuario_id": usuario_id},
                 headers={"x-api-key": API_KEY}
             )
+            response.raise_for_status()
             data = response.json()
 
         lugares = data.get("lugares", [])
@@ -156,13 +221,18 @@ async def manejar_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 reply_markup=teclado
             )
 
+    except httpx.ConnectError:
+        await update.message.reply_text(
+            "⚠️ No puedo conectarme al servidor. Asegúrate de que la API está corriendo."
+        )
+        logging.error("API no disponible en manejar_ubicacion")
     except Exception as e:
         await update.message.reply_text("Error buscando lugares cercanos. Intenta de nuevo.")
         logging.error(f"Error cercanos GPS: {e}")
 
 
 async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handler principal — detecta cercanía o responde con RAG."""
+    """Handler principal — detecta cercanía o responde con RAG + historial."""
     pregunta   = update.message.text
     usuario_id = str(update.message.from_user.id)
 
@@ -175,28 +245,34 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     es_cercania = any(p in pregunta.lower() for p in palabras_cercania)
 
-    await update.message.chat.send_action("typing")
+    # Iniciar indicador de escritura persistente
+    stop_typing = asyncio.Event()
+    typing_task = asyncio.create_task(
+        keep_typing(update.effective_chat.id, context.bot, stop_typing)
+    )
 
-    if es_cercania:
-        lat = context.user_data.get("lat")
-        lng = context.user_data.get("lng")
+    try:
+        if es_cercania:
+            lat = context.user_data.get("lat")
+            lng = context.user_data.get("lng")
 
-        payload = {"usuario_id": usuario_id}
-        if lat and lng:
-            payload["lat"] = lat
-            payload["lng"] = lng
-        else:
-            payload["texto_ubicacion"] = pregunta
+            payload = {"usuario_id": usuario_id}
+            if lat and lng:
+                payload["lat"] = lat
+                payload["lng"] = lng
+            else:
+                payload["texto_ubicacion"] = pregunta
 
-        try:
             async with httpx.AsyncClient(timeout=30) as client:
                 response = await client.post(
                     f"{API_URL}/cercanos",
                     json=payload,
                     headers={"x-api-key": API_KEY}
                 )
+                response.raise_for_status()
                 data = response.json()
 
+            stop_typing.set()
             lugares = data.get("lugares", [])
             await update.message.reply_text(data["respuesta"], parse_mode="Markdown")
 
@@ -216,21 +292,19 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "¿Quieres el mapa para navegar sin internet?",
                     reply_markup=teclado
                 )
-        except Exception as e:
-            await update.message.reply_text("Error buscando lugares cercanos. Intenta de nuevo.")
-            logging.error(f"Error cercanos texto: {e}")
 
-    else:
-        # Flujo RAG normal
-        try:
+        else:
+            # Flujo RAG con historial de conversación
             async with httpx.AsyncClient(timeout=120) as client:
                 response = await client.post(
                     f"{API_URL}/chat",
                     json={"texto": pregunta, "usuario_id": usuario_id},
                     headers={"x-api-key": API_KEY}
                 )
+                response.raise_for_status()
                 data = response.json()
 
+            stop_typing.set()
             respuesta = data["respuesta"]
 
             nombre_lugar = detectar_lugar(respuesta)
@@ -245,9 +319,29 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if lugar_datos:
                 await enviar_tarjeta_lugar(update, lugar_datos)
 
-        except Exception as e:
-            await update.message.reply_text("Lo siento, ocurrió un error. Por favor intenta de nuevo.")
-            logging.error(f"Error RAG: {e}")
+    except httpx.ConnectError:
+        stop_typing.set()
+        await update.message.reply_text(
+            "⚠️ No puedo conectarme al servidor. ¿Está la API corriendo?\n"
+            "Intenta de nuevo en unos momentos."
+        )
+        logging.error("API no disponible en responder")
+    except httpx.TimeoutException:
+        stop_typing.set()
+        await update.message.reply_text(
+            "⏳ La consulta tardó demasiado. El modelo LLM puede estar ocupado.\n"
+            "Por favor intenta de nuevo."
+        )
+        logging.error("Timeout en responder")
+    except Exception as e:
+        stop_typing.set()
+        await update.message.reply_text(
+            "Lo siento, ocurrió un error inesperado. Por favor intenta de nuevo."
+        )
+        logging.error(f"Error en responder: {e}")
+    finally:
+        stop_typing.set()
+        typing_task.cancel()
 
 
 async def enviar_tarjeta_lugar(update: Update, lugar: dict):
@@ -296,7 +390,6 @@ async def manejar_botones(update: Update, context: ContextTypes.DEFAULT_TYPE):
     formato    = datos[0]   # kml / gpx / kml_multi / gpx_multi
     contenido  = datos[1] if len(datos) > 1 else ""
 
-    # Determinar formato real y nombres
     es_multi      = "multi" in formato
     formato_real  = "kml" if "kml" in formato else "gpx"
     nombres       = contenido.split(",") if es_multi else [contenido or ultimos_lugares.get(usuario_id, "")]
@@ -369,10 +462,15 @@ def main():
         request = HTTPXRequest(proxy=PROXY_URL)
         builder = builder.request(request)
     app = builder.build()
+
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("ayuda", ayuda))
+    app.add_handler(CommandHandler("help",  ayuda))
+    app.add_handler(CommandHandler("reset", reset))
     app.add_handler(MessageHandler(filters.LOCATION, manejar_ubicacion))
     app.add_handler(CallbackQueryHandler(manejar_botones))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder))
+
     print("Bot corriendo... Ctrl+C para detener")
     app.run_polling()
 

@@ -18,11 +18,7 @@ DB_PATH      = os.getenv("DB_PATH", "./db")
 OLLAMA_URL   = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
 
-Settings.llm = Ollama(
-    model=OLLAMA_MODEL,
-    base_url=OLLAMA_URL,
-    request_timeout=120.0,
-    system_prompt="""Eres un agente turístico experto en Cuba, especialmente en La Habana.
+SYSTEM_PROMPT = """Eres un agente turístico experto en Cuba, especialmente en La Habana.
 
 REGLA ABSOLUTA DE IDIOMA: Detecta el idioma del mensaje del usuario y responde
 SIEMPRE en ese mismo idioma. Sin excepciones.
@@ -37,7 +33,14 @@ Nunca respondas en un idioma diferente al que usó el usuario.
 Usa únicamente la información del contexto proporcionado.
 Incluye nombre, dirección, teléfono, calificación y horarios cuando estén disponibles.
 Cuando no tengas información exacta de horarios o precios, indícalo claramente
-y sugiere confirmar directamente con el lugar."""
+y sugiere confirmar directamente con el lugar.
+Recuerda el historial de la conversación para responder preguntas de seguimiento."""
+
+Settings.llm = Ollama(
+    model=OLLAMA_MODEL,
+    base_url=OLLAMA_URL,
+    request_timeout=120.0,
+    system_prompt=SYSTEM_PROMPT
 )
 Settings.embed_model = OllamaEmbedding(
     model_name="nomic-embed-text",
@@ -49,27 +52,62 @@ chroma_collection = chroma_client.get_or_create_collection("lugares_turisticos")
 vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 index = VectorStoreIndex.from_vector_store(vector_store, storage_context=storage_context)
-query_engine = index.as_query_engine(
-    similarity_top_k=10,
-    response_mode="compact"
-)
 
-app = FastAPI(title="Agente Turístico API")
+# Motor de chat con historial por usuario — cada usuario mantiene su propia conversación
+user_chat_engines: dict = {}
+
+def get_chat_engine(user_id: str):
+    """Devuelve el motor de chat con historial para el usuario, creándolo si no existe."""
+    if user_id not in user_chat_engines:
+        user_chat_engines[user_id] = index.as_chat_engine(
+            chat_mode="context",
+            verbose=False,
+            system_prompt=SYSTEM_PROMPT
+        )
+    return user_chat_engines[user_id]
+
+app = FastAPI(title="Agente Turístico Cuba API")
 
 class Pregunta(BaseModel):
     texto: str
     usuario_id: str = "anonimo"
 
+class ResetRequest(BaseModel):
+    usuario_id: str
+
+class SolicitudMapa(BaseModel):
+    place_id: str
+    nombre: str
+
+class SolicitudCercania(BaseModel):
+    lat: float = None
+    lng: float = None
+    texto_ubicacion: str = None
+    usuario_id: str = "anonimo"
+
+
 @app.get("/")
 def health():
-    return {"status": "ok", "agente": "turístico", "modelo": OLLAMA_MODEL}
+    try:
+        total_lugares = chroma_collection.count()
+    except Exception:
+        total_lugares = -1
+    return {
+        "status": "ok",
+        "agente": "turístico",
+        "modelo": OLLAMA_MODEL,
+        "lugares_en_db": total_lugares,
+        "usuarios_activos": len(user_chat_engines)
+    }
+
 
 @app.post("/chat")
 def chat(pregunta: Pregunta, x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="API key inválida")
     try:
-        respuesta = query_engine.query(pregunta.texto)
+        engine = get_chat_engine(pregunta.usuario_id)
+        respuesta = engine.chat(pregunta.texto)
         return {
             "pregunta": pregunta.texto,
             "respuesta": str(respuesta),
@@ -78,9 +116,14 @@ def chat(pregunta: Pregunta, x_api_key: str = Header(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-class SolicitudMapa(BaseModel):
-    place_id: str
-    nombre: str
+
+@app.post("/reset")
+def reset_chat(solicitud: ResetRequest, x_api_key: str = Header(...)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="API key inválida")
+    user_chat_engines.pop(solicitud.usuario_id, None)
+    return {"status": "ok", "mensaje": f"Historial de {solicitud.usuario_id} reiniciado"}
+
 
 @app.post("/mapa/kml")
 def descargar_kml(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
@@ -120,6 +163,7 @@ def descargar_kml(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/mapa/gpx")
 def descargar_gpx(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
@@ -158,11 +202,6 @@ def descargar_gpx(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-class SolicitudCercania(BaseModel):
-    lat: float = None
-    lng: float = None
-    texto_ubicacion: str = None
-    usuario_id: str = "anonimo"
 
 @app.post("/cercanos")
 def lugares_cercanos_endpoint(solicitud: SolicitudCercania, x_api_key: str = Header(...)):
