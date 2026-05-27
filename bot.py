@@ -1,13 +1,25 @@
 import logging
 import re
-import requests
 import os
-# Proxy para Telegram (red corporativa)
-PROXY_URL = "http://10.11.0.9:8080"
+import httpx
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# ─────────────────────────────────────────────
+# CONFIGURACIÓN — leída desde .env
+# ─────────────────────────────────────────────
+PROXY_URL = os.getenv("PROXY_URL", "")
+TOKEN     = os.getenv("TELEGRAM_TOKEN")
+API_URL   = os.getenv("API_URL", "http://localhost:8000")
+API_KEY   = os.getenv("API_KEY")
+DB_PATH   = os.getenv("DB_PATH", "./db")
+# ─────────────────────────────────────────────
 
 # localhost nunca usa proxy
 os.environ["NO_PROXY"] = "localhost,127.0.0.1"
 os.environ["no_proxy"] = "localhost,127.0.0.1"
+
 import chromadb
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import KeyboardButton, ReplyKeyboardMarkup
@@ -16,15 +28,6 @@ from telegram.ext import (
     CallbackQueryHandler, filters, ContextTypes
 )
 from media import obtener_imagen, construir_caption
-
-# ─────────────────────────────────────────────
-# CONFIGURACIÓN — edita solo estas líneas
-# ─────────────────────────────────────────────
-TOKEN   = "8177591854:AAHuTtU-G7kWYZqOZwzDduXYWiNax2Xswns"   # ← reemplaza esto
-API_URL = "http://localhost:8000"
-API_KEY = "turismo-secret-2024"
-DB_PATH = "C:/Users/larquin/agente-turistico/db"
-# ─────────────────────────────────────────────
 
 logging.basicConfig(level=logging.INFO)
 
@@ -124,19 +127,18 @@ async def manejar_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("📡 Ubicación recibida. Buscando lugares cercanos...")
 
     try:
-        response = requests.post(
-            f"{API_URL}/cercanos",
-            json={"lat": lat, "lng": lng, "usuario_id": usuario_id},
-            headers={"x-api-key": API_KEY},
-            timeout=30
-        )
-        data    = response.json()
-        lugares = data.get("lugares", [])
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.post(
+                f"{API_URL}/cercanos",
+                json={"lat": lat, "lng": lng, "usuario_id": usuario_id},
+                headers={"x-api-key": API_KEY}
+            )
+            data = response.json()
 
+        lugares = data.get("lugares", [])
         await update.message.reply_text(data["respuesta"], parse_mode="Markdown")
 
         if lugares:
-            # Mostrar imagen del lugar más cercano
             await enviar_tarjeta_lugar(update, lugares[0])
 
             teclado = InlineKeyboardMarkup([
@@ -155,7 +157,7 @@ async def manejar_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
 
     except Exception as e:
-        await update.message.reply_text("Error buscando lugares cercanos.")
+        await update.message.reply_text("Error buscando lugares cercanos. Intenta de nuevo.")
         logging.error(f"Error cercanos GPS: {e}")
 
 
@@ -164,8 +166,7 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     pregunta   = update.message.text
     usuario_id = str(update.message.from_user.id)
 
-    print(f">>> MENSAJE RECIBIDO: '{pregunta}' de usuario {usuario_id}")
-    logging.info(f">>> LLAMANDO API con: {pregunta}")
+    logging.info(f">>> MENSAJE: '{pregunta}' de usuario {usuario_id}")
 
     palabras_cercania = [
         "cerca", "cercano", "próximo", "nearby", "close",
@@ -188,15 +189,15 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
             payload["texto_ubicacion"] = pregunta
 
         try:
-            response = requests.post(
-                f"{API_URL}/cercanos",
-                json=payload,
-                headers={"x-api-key": API_KEY},
-                timeout=30
-            )
-            data    = response.json()
-            lugares = data.get("lugares", [])
+            async with httpx.AsyncClient(timeout=30) as client:
+                response = await client.post(
+                    f"{API_URL}/cercanos",
+                    json=payload,
+                    headers={"x-api-key": API_KEY}
+                )
+                data = response.json()
 
+            lugares = data.get("lugares", [])
             await update.message.reply_text(data["respuesta"], parse_mode="Markdown")
 
             if lugares:
@@ -216,19 +217,20 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     reply_markup=teclado
                 )
         except Exception as e:
-            await update.message.reply_text("Error buscando lugares cercanos.")
+            await update.message.reply_text("Error buscando lugares cercanos. Intenta de nuevo.")
             logging.error(f"Error cercanos texto: {e}")
 
     else:
         # Flujo RAG normal
         try:
-            response = requests.post(
-                f"{API_URL}/chat",
-                json={"texto": pregunta, "usuario_id": usuario_id},
-                headers={"x-api-key": API_KEY},
-                timeout=120
-            )
-            data      = response.json()
+            async with httpx.AsyncClient(timeout=120) as client:
+                response = await client.post(
+                    f"{API_URL}/chat",
+                    json={"texto": pregunta, "usuario_id": usuario_id},
+                    headers={"x-api-key": API_KEY}
+                )
+                data = response.json()
+
             respuesta = data["respuesta"]
 
             nombre_lugar = detectar_lugar(respuesta)
@@ -244,7 +246,7 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await enviar_tarjeta_lugar(update, lugar_datos)
 
         except Exception as e:
-            await update.message.reply_text("Error. Intenta de nuevo.")
+            await update.message.reply_text("Lo siento, ocurrió un error. Por favor intenta de nuevo.")
             logging.error(f"Error RAG: {e}")
 
 
@@ -255,7 +257,7 @@ async def enviar_tarjeta_lugar(update: Update, lugar: dict):
     categoria = lugar.get("categoria", "")
     website   = lugar.get("website", "")
 
-    imagen_url = obtener_imagen(thumbnail, nombre, categoria)
+    imagen_url = await obtener_imagen(thumbnail, nombre, categoria)
     caption    = construir_caption(lugar)
 
     botones = []
@@ -311,14 +313,13 @@ async def manejar_botones(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     try:
-        # Generar un archivo por cada nombre y enviar el primero (o combinar)
         nombre_principal = nombres[0]
-        response = requests.post(
-            f"{API_URL}/mapa/{formato_real}",
-            json={"place_id": "", "nombre": nombre_principal},
-            headers={"x-api-key": API_KEY},
-            timeout=30
-        )
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.post(
+                f"{API_URL}/mapa/{formato_real}",
+                json={"place_id": "", "nombre": nombre_principal},
+                headers={"x-api-key": API_KEY}
+            )
 
         if response.status_code == 200:
             nombre_arch = nombre_principal.replace(" ", "_")[:30]
@@ -363,8 +364,11 @@ async def manejar_botones(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     from telegram.request import HTTPXRequest
-    request = HTTPXRequest(proxy=PROXY_URL)
-    app = Application.builder().token(TOKEN).request(request).build()
+    builder = Application.builder().token(TOKEN)
+    if PROXY_URL:
+        request = HTTPXRequest(proxy=PROXY_URL)
+        builder = builder.request(request)
+    app = builder.build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.LOCATION, manejar_ubicacion))
     app.add_handler(CallbackQueryHandler(manejar_botones))

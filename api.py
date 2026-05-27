@@ -2,20 +2,25 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
 import chromadb
-import re
+import os
+from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Settings, StorageContext
 from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from generador_mapas import generar_kml, generar_gpx, extraer_coordenadas, parsear_documento
 from ubicacion import lugares_cercanos, texto_a_coordenadas, formatear_respuesta_cercania
-import os
 
-API_KEY = "turismo-secret-2024"
+load_dotenv()
+
+API_KEY      = os.getenv("API_KEY")
+DB_PATH      = os.getenv("DB_PATH", "./db")
+OLLAMA_URL   = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
 
 Settings.llm = Ollama(
-    model="qwen2.5:7b",
-    base_url="http://localhost:11434",
+    model=OLLAMA_MODEL,
+    base_url=OLLAMA_URL,
     request_timeout=120.0,
     system_prompt="""Eres un agente turístico experto en Cuba, especialmente en La Habana.
 
@@ -36,10 +41,10 @@ y sugiere confirmar directamente con el lugar."""
 )
 Settings.embed_model = OllamaEmbedding(
     model_name="nomic-embed-text",
-    base_url="http://localhost:11434"
+    base_url=OLLAMA_URL
 )
 
-chroma_client = chromadb.PersistentClient(path="C:/Users/larquin/agente-turistico/db")
+chroma_client = chromadb.PersistentClient(path=DB_PATH)
 chroma_collection = chroma_client.get_or_create_collection("lugares_turisticos")
 vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
@@ -57,7 +62,7 @@ class Pregunta(BaseModel):
 
 @app.get("/")
 def health():
-    return {"status": "ok", "agente": "turístico", "modelo": "qwen2.5:7b"}
+    return {"status": "ok", "agente": "turístico", "modelo": OLLAMA_MODEL}
 
 @app.post("/chat")
 def chat(pregunta: Pregunta, x_api_key: str = Header(...)):
@@ -82,12 +87,10 @@ def descargar_kml(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="API key inválida")
     try:
-        # Buscar el documento en ChromaDB por nombre
         col = chroma_client.get_or_create_collection("lugares_turisticos")
         resultados = col.get(where={"title": solicitud.nombre})
 
         if not resultados["documents"]:
-            # Búsqueda alternativa por texto
             resultados = col.get(limit=100)
             docs_filtrados = [
                 d for d in resultados["documents"]
@@ -168,7 +171,6 @@ def lugares_cercanos_endpoint(solicitud: SolicitudCercania, x_api_key: str = Hea
     try:
         lat, lng = solicitud.lat, solicitud.lng
 
-        # Si no tiene GPS, intentar resolver desde texto
         if not lat and solicitud.texto_ubicacion:
             lat, lng = texto_a_coordenadas(solicitud.texto_ubicacion)
 
@@ -185,7 +187,7 @@ def lugares_cercanos_endpoint(solicitud: SolicitudCercania, x_api_key: str = Hea
         lugares = lugares_cercanos(
             lat_usuario=lat,
             lng_usuario=lng,
-            db_path="C:/Users/larquin/agente-turistico/db",
+            db_path=DB_PATH,
             top_n=3
         )
 
@@ -194,7 +196,3 @@ def lugares_cercanos_endpoint(solicitud: SolicitudCercania, x_api_key: str = Hea
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-        
-# Agregar también el chroma_client al scope global del api.py
-# justo después de crear el index, agregar esta línea:
-chroma_client = chromadb.PersistentClient(path="C:/Users/larquin/agente-turistico/db")

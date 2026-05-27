@@ -1,23 +1,30 @@
 import json
 import os
 import chromadb
+from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Document, Settings, StorageContext
 from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 
+load_dotenv()
+
+DB_PATH      = os.getenv("DB_PATH", "./db")
+OLLAMA_URL   = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+
 Settings.llm = Ollama(
-    model="qwen2.5:7b",
-    base_url="http://localhost:11434",
+    model=OLLAMA_MODEL,
+    base_url=OLLAMA_URL,
     request_timeout=120.0,
     system_prompt="Eres un agente turístico experto en Cuba. Responde SIEMPRE en español. Usa únicamente la información del contexto proporcionado para responder."
 )
 Settings.embed_model = OllamaEmbedding(
     model_name="nomic-embed-text",
-    base_url="http://localhost:11434"
+    base_url=OLLAMA_URL
 )
 
-chroma_client = chromadb.PersistentClient(path="C:/Users/larquin/agente-turistico/db")
+chroma_client = chromadb.PersistentClient(path=DB_PATH)
 chroma_collection = chroma_client.get_or_create_collection("lugares_turisticos")
 vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
@@ -57,7 +64,6 @@ def construir_texto(lugar: dict) -> str:
         lng = coords.get("longitude", "")
         partes.append(f"Coordenadas GPS: {lat}, {lng}")
 
-    # Query original para dar contexto de categoría
     query = lugar.get("_query", "")
     if query:
         partes.append(f"Categoría de búsqueda: {query}")
@@ -71,10 +77,10 @@ def construir_metadata(lugar: dict) -> dict:
         "rating":    str(lugar.get("rating", "")),
         "address":   lugar.get("address", ""),
         "position":  str(lugar.get("position", "")),
-        "thumbnail": lugar.get("thumbnail", ""),        # ← NUEVO
-        "website":   lugar.get("website", ""),          # ← NUEVO
-        "lat":       str(lugar.get("gps_coordinates", {}).get("latitude", "")),   # ← NUEVO
-        "lng":       str(lugar.get("gps_coordinates", {}).get("longitude", "")),  # ← NUEVO
+        "thumbnail": lugar.get("thumbnail", ""),
+        "website":   lugar.get("website", ""),
+        "lat":       str(lugar.get("gps_coordinates", {}).get("latitude", "")),
+        "lng":       str(lugar.get("gps_coordinates", {}).get("longitude", "")),
     }
 
 def cargar_json(ruta_archivo: str):
