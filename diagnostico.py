@@ -1,13 +1,20 @@
 import chromadb
+import os
+from dotenv import load_dotenv
 from llama_index.core import Settings
 from llama_index.embeddings.ollama import OllamaEmbedding
 
+load_dotenv()
+
+DB_PATH    = os.getenv("DB_PATH", "./db")
+OLLAMA_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+
 Settings.embed_model = OllamaEmbedding(
     model_name="nomic-embed-text",
-    base_url="http://localhost:11434"
+    base_url=OLLAMA_URL
 )
 
-client = chromadb.PersistentClient(path="C:/Users/larquin/agente-turistico/db")
+client = chromadb.PersistentClient(path=DB_PATH)
 col = client.get_or_create_collection("lugares_turisticos")
 
 print(f"Total documentos: {col.count()}\n")

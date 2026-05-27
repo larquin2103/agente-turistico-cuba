@@ -2,22 +2,23 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
 import chromadb
-import re
+import os
+from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Settings, StorageContext
 from llama_index.llms.ollama import Ollama
 from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from generador_mapas import generar_kml, generar_gpx, extraer_coordenadas, parsear_documento
 from ubicacion import lugares_cercanos, texto_a_coordenadas, formatear_respuesta_cercania
-import os
 
-API_KEY = "turismo-secret-2024"
+load_dotenv()
 
-Settings.llm = Ollama(
-    model="qwen2.5:7b",
-    base_url="http://localhost:11434",
-    request_timeout=120.0,
-    system_prompt="""Eres un agente turístico experto en Cuba, especialmente en La Habana.
+API_KEY      = os.getenv("API_KEY")
+DB_PATH      = os.getenv("DB_PATH", "./db")
+OLLAMA_URL   = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+
+SYSTEM_PROMPT = """Eres un agente turístico experto en Cuba, especialmente en La Habana.
 
 REGLA ABSOLUTA DE IDIOMA: Detecta el idioma del mensaje del usuario y responde
 SIEMPRE en ese mismo idioma. Sin excepciones.
@@ -32,39 +33,81 @@ Nunca respondas en un idioma diferente al que usó el usuario.
 Usa únicamente la información del contexto proporcionado.
 Incluye nombre, dirección, teléfono, calificación y horarios cuando estén disponibles.
 Cuando no tengas información exacta de horarios o precios, indícalo claramente
-y sugiere confirmar directamente con el lugar."""
+y sugiere confirmar directamente con el lugar.
+Recuerda el historial de la conversación para responder preguntas de seguimiento."""
+
+Settings.llm = Ollama(
+    model=OLLAMA_MODEL,
+    base_url=OLLAMA_URL,
+    request_timeout=120.0,
+    system_prompt=SYSTEM_PROMPT
 )
 Settings.embed_model = OllamaEmbedding(
     model_name="nomic-embed-text",
-    base_url="http://localhost:11434"
+    base_url=OLLAMA_URL
 )
 
-chroma_client = chromadb.PersistentClient(path="C:/Users/larquin/agente-turistico/db")
+chroma_client = chromadb.PersistentClient(path=DB_PATH)
 chroma_collection = chroma_client.get_or_create_collection("lugares_turisticos")
 vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 index = VectorStoreIndex.from_vector_store(vector_store, storage_context=storage_context)
-query_engine = index.as_query_engine(
-    similarity_top_k=10,
-    response_mode="compact"
-)
 
-app = FastAPI(title="Agente Turístico API")
+# Motor de chat con historial por usuario — cada usuario mantiene su propia conversación
+user_chat_engines: dict = {}
+
+def get_chat_engine(user_id: str):
+    """Devuelve el motor de chat con historial para el usuario, creándolo si no existe."""
+    if user_id not in user_chat_engines:
+        user_chat_engines[user_id] = index.as_chat_engine(
+            chat_mode="context",
+            verbose=False,
+            system_prompt=SYSTEM_PROMPT
+        )
+    return user_chat_engines[user_id]
+
+app = FastAPI(title="Agente Turístico Cuba API")
 
 class Pregunta(BaseModel):
     texto: str
     usuario_id: str = "anonimo"
 
+class ResetRequest(BaseModel):
+    usuario_id: str
+
+class SolicitudMapa(BaseModel):
+    place_id: str
+    nombre: str
+
+class SolicitudCercania(BaseModel):
+    lat: float = None
+    lng: float = None
+    texto_ubicacion: str = None
+    usuario_id: str = "anonimo"
+
+
 @app.get("/")
 def health():
-    return {"status": "ok", "agente": "turístico", "modelo": "qwen2.5:7b"}
+    try:
+        total_lugares = chroma_collection.count()
+    except Exception:
+        total_lugares = -1
+    return {
+        "status": "ok",
+        "agente": "turístico",
+        "modelo": OLLAMA_MODEL,
+        "lugares_en_db": total_lugares,
+        "usuarios_activos": len(user_chat_engines)
+    }
+
 
 @app.post("/chat")
 def chat(pregunta: Pregunta, x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="API key inválida")
     try:
-        respuesta = query_engine.query(pregunta.texto)
+        engine = get_chat_engine(pregunta.usuario_id)
+        respuesta = engine.chat(pregunta.texto)
         return {
             "pregunta": pregunta.texto,
             "respuesta": str(respuesta),
@@ -73,21 +116,24 @@ def chat(pregunta: Pregunta, x_api_key: str = Header(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-class SolicitudMapa(BaseModel):
-    place_id: str
-    nombre: str
+
+@app.post("/reset")
+def reset_chat(solicitud: ResetRequest, x_api_key: str = Header(...)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="API key inválida")
+    user_chat_engines.pop(solicitud.usuario_id, None)
+    return {"status": "ok", "mensaje": f"Historial de {solicitud.usuario_id} reiniciado"}
+
 
 @app.post("/mapa/kml")
 def descargar_kml(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="API key inválida")
     try:
-        # Buscar el documento en ChromaDB por nombre
         col = chroma_client.get_or_create_collection("lugares_turisticos")
         resultados = col.get(where={"title": solicitud.nombre})
 
         if not resultados["documents"]:
-            # Búsqueda alternativa por texto
             resultados = col.get(limit=100)
             docs_filtrados = [
                 d for d in resultados["documents"]
@@ -116,6 +162,7 @@ def descargar_kml(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/mapa/gpx")
 def descargar_gpx(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
@@ -155,11 +202,6 @@ def descargar_gpx(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-class SolicitudCercania(BaseModel):
-    lat: float = None
-    lng: float = None
-    texto_ubicacion: str = None
-    usuario_id: str = "anonimo"
 
 @app.post("/cercanos")
 def lugares_cercanos_endpoint(solicitud: SolicitudCercania, x_api_key: str = Header(...)):
@@ -168,7 +210,6 @@ def lugares_cercanos_endpoint(solicitud: SolicitudCercania, x_api_key: str = Hea
     try:
         lat, lng = solicitud.lat, solicitud.lng
 
-        # Si no tiene GPS, intentar resolver desde texto
         if not lat and solicitud.texto_ubicacion:
             lat, lng = texto_a_coordenadas(solicitud.texto_ubicacion)
 
@@ -185,7 +226,7 @@ def lugares_cercanos_endpoint(solicitud: SolicitudCercania, x_api_key: str = Hea
         lugares = lugares_cercanos(
             lat_usuario=lat,
             lng_usuario=lng,
-            db_path="C:/Users/larquin/agente-turistico/db",
+            db_path=DB_PATH,
             top_n=3
         )
 
@@ -194,7 +235,3 @@ def lugares_cercanos_endpoint(solicitud: SolicitudCercania, x_api_key: str = Hea
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-        
-# Agregar también el chroma_client al scope global del api.py
-# justo después de crear el index, agregar esta línea:
-chroma_client = chromadb.PersistentClient(path="C:/Users/larquin/agente-turistico/db")

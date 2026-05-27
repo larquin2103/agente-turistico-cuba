@@ -1,4 +1,4 @@
-import requests
+import httpx
 import logging
 import urllib.parse
 
@@ -14,27 +14,23 @@ UNSPLASH_FALLBACK_CUBA = {
     "default":      "https://images.unsplash.com/photo-1500759285222-a95626b934cb?w=800",
 }
 
-def obtener_imagen(thumbnail: str, nombre: str, categoria: str = "") -> str:
+async def obtener_imagen(thumbnail: str, nombre: str, categoria: str = "") -> str:
     """
     Estrategia en cascada:
     1. Thumbnail del JSON (Google Maps)
     2. Búsqueda en Wikipedia
     3. Imagen genérica por categoría (Unsplash)
     """
-
-    # 1 — Thumbnail directo del JSON
     if thumbnail and thumbnail.startswith("http"):
-        if verificar_url(thumbnail):
+        if await verificar_url(thumbnail):
             logging.info(f"Imagen desde JSON: {nombre}")
             return thumbnail
 
-    # 2 — Buscar en Wikipedia
-    imagen_wiki = buscar_wikipedia(nombre)
+    imagen_wiki = await buscar_wikipedia(nombre)
     if imagen_wiki:
         logging.info(f"Imagen desde Wikipedia: {nombre}")
         return imagen_wiki
 
-    # 3 — Fallback por categoría
     categoria_lower = categoria.lower()
     for clave, url in UNSPLASH_FALLBACK_CUBA.items():
         if clave in categoria_lower or clave in nombre.lower():
@@ -42,43 +38,45 @@ def obtener_imagen(thumbnail: str, nombre: str, categoria: str = "") -> str:
 
     return UNSPLASH_FALLBACK_CUBA["default"]
 
-def verificar_url(url: str) -> bool:
-    """Verifica que la URL de imagen responde correctamente"""
+
+async def verificar_url(url: str) -> bool:
+    """Verifica que la URL de imagen responde correctamente."""
     try:
-        resp = requests.head(url, timeout=5, allow_redirects=True)
-        return resp.status_code == 200
+        async with httpx.AsyncClient(timeout=5) as client:
+            resp = await client.head(url, follow_redirects=True)
+            return resp.status_code == 200
     except Exception:
         return False
 
-def buscar_wikipedia(nombre: str) -> str:
+
+async def buscar_wikipedia(nombre: str) -> str:
     """
     Busca imagen del lugar en Wikipedia API.
     Funciona bien para monumentos, parques y lugares históricos.
     """
     try:
-        # Buscar el artículo
         busqueda_url = (
             "https://en.wikipedia.org/w/api.php"
             f"?action=query&list=search&srsearch={urllib.parse.quote(nombre + ' Cuba')}"
             "&format=json&srlimit=1"
         )
-        resp = requests.get(busqueda_url, timeout=8)
-        data = resp.json()
-
-        resultados = data.get("query", {}).get("search", [])
-        if not resultados:
-            return None
-
-        titulo = resultados[0]["title"]
-
-        # Obtener imagen del artículo
-        imagen_url = (
+        imagen_url_tpl = (
             "https://en.wikipedia.org/w/api.php"
-            f"?action=query&titles={urllib.parse.quote(titulo)}"
+            "?action=query&titles={titulo}"
             "&prop=pageimages&format=json&pithumbsize=800"
         )
-        resp2 = requests.get(imagen_url, timeout=8)
-        data2 = resp2.json()
+
+        async with httpx.AsyncClient(timeout=8) as client:
+            resp = await client.get(busqueda_url)
+            data = resp.json()
+
+            resultados = data.get("query", {}).get("search", [])
+            if not resultados:
+                return None
+
+            titulo = urllib.parse.quote(resultados[0]["title"])
+            resp2 = await client.get(imagen_url_tpl.format(titulo=titulo))
+            data2 = resp2.json()
 
         pages = data2.get("query", {}).get("pages", {})
         for page in pages.values():
@@ -92,8 +90,9 @@ def buscar_wikipedia(nombre: str) -> str:
         logging.warning(f"Wikipedia error para {nombre}: {e}")
         return None
 
+
 def construir_caption(lugar: dict) -> str:
-    """Texto que acompaña la imagen en Telegram"""
+    """Texto que acompaña la imagen en Telegram."""
     partes = [f"*{lugar.get('nombre', 'Sin nombre')}*"]
 
     if lugar.get("rating"):
@@ -106,6 +105,7 @@ def construir_caption(lugar: dict) -> str:
         partes.append(f"🕐 {lugar['horario']}")
 
     return "\n".join(partes)
+
 
 def construir_google_maps_url(lat: float, lng: float, nombre: str) -> str:
     nombre_enc = urllib.parse.quote(nombre)
