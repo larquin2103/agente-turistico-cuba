@@ -5,18 +5,19 @@ import chromadb
 import os
 from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Settings, StorageContext
-from llama_index.llms.ollama import Ollama
-from llama_index.embeddings.ollama import OllamaEmbedding
+from llama_index.llms.groq import Groq
+from llama_index.embeddings.fastembed import FastEmbedEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from generador_mapas import generar_kml, generar_gpx, extraer_coordenadas, parsear_documento
 from ubicacion import lugares_cercanos, texto_a_coordenadas, formatear_respuesta_cercania
 
 load_dotenv()
 
-API_KEY      = os.getenv("API_KEY")
-DB_PATH      = os.getenv("DB_PATH", "./db")
-OLLAMA_URL   = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+API_KEY     = os.getenv("API_KEY")
+DB_PATH     = os.getenv("DB_PATH", "./db")
+GROQ_KEY    = os.getenv("GROQ_API_KEY")
+GROQ_MODEL  = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 
 SYSTEM_PROMPT = """Eres un agente turístico experto en Cuba, especialmente en La Habana.
 
@@ -36,16 +37,12 @@ Cuando no tengas información exacta de horarios o precios, indícalo claramente
 y sugiere confirmar directamente con el lugar.
 Recuerda el historial de la conversación para responder preguntas de seguimiento."""
 
-Settings.llm = Ollama(
-    model=OLLAMA_MODEL,
-    base_url=OLLAMA_URL,
-    request_timeout=120.0,
-    system_prompt=SYSTEM_PROMPT
+Settings.llm = Groq(
+    model=GROQ_MODEL,
+    api_key=GROQ_KEY,
+    request_timeout=60.0
 )
-Settings.embed_model = OllamaEmbedding(
-    model_name="nomic-embed-text",
-    base_url=OLLAMA_URL
-)
+Settings.embed_model = FastEmbedEmbedding(model_name=EMBED_MODEL)
 
 chroma_client = chromadb.PersistentClient(path=DB_PATH)
 chroma_collection = chroma_client.get_or_create_collection("lugares_turisticos")
@@ -53,11 +50,10 @@ vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 index = VectorStoreIndex.from_vector_store(vector_store, storage_context=storage_context)
 
-# Motor de chat con historial por usuario — cada usuario mantiene su propia conversación
+# Motor de chat con historial por usuario
 user_chat_engines: dict = {}
 
 def get_chat_engine(user_id: str):
-    """Devuelve el motor de chat con historial para el usuario, creándolo si no existe."""
     if user_id not in user_chat_engines:
         user_chat_engines[user_id] = index.as_chat_engine(
             chat_mode="context",
@@ -94,8 +90,8 @@ def health():
         total_lugares = -1
     return {
         "status": "ok",
-        "agente": "turístico",
-        "modelo": OLLAMA_MODEL,
+        "llm": GROQ_MODEL,
+        "embedding": EMBED_MODEL,
         "lugares_en_db": total_lugares,
         "usuarios_activos": len(user_chat_engines)
     }
@@ -152,7 +148,6 @@ def descargar_kml(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
 
         kml = generar_kml([datos])
         nombre_archivo = solicitud.nombre.replace(" ", "_")[:30]
-
         return Response(
             content=kml,
             media_type="application/vnd.google-earth.kml+xml",
@@ -191,7 +186,6 @@ def descargar_gpx(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
 
         gpx = generar_gpx([datos])
         nombre_archivo = solicitud.nombre.replace(" ", "_")[:30]
-
         return Response(
             content=gpx,
             media_type="application/gpx+xml",

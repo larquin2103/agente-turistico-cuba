@@ -1,6 +1,6 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────
-#  Agente Turístico Cuba — Script de inicio para demo
+#  Agente Turístico Cuba — Script de inicio
 #  Uso: bash start.sh
 # ─────────────────────────────────────────────────────────
 set -e
@@ -11,39 +11,31 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 # 1. Verificar .env
 if [ ! -f .env ]; then
-    echo "⚠️  No se encontró el archivo .env"
-    echo "    Copiando plantilla..."
+    echo "⚠️  No se encontró .env — copiando plantilla..."
     cp .env.example .env
-    echo "    ✏️  Edita .env con tu TELEGRAM_TOKEN y vuelve a ejecutar este script"
+    echo "✏️  Edita .env con tu TELEGRAM_TOKEN y GROQ_API_KEY, luego vuelve a ejecutar"
     exit 1
 fi
 
-# Cargar variables de entorno
-set -a
-source .env
-set +a
+set -a; source .env; set +a
 
-OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://localhost:11434}"
 DB_PATH="${DB_PATH:-./db}"
 API_PORT="${API_PORT:-8000}"
 
-# 2. Verificar Ollama
-echo ""
-echo "🔍  Verificando Ollama en $OLLAMA_BASE_URL..."
-if ! curl -sf "$OLLAMA_BASE_URL/api/version" > /dev/null 2>&1; then
-    echo "❌  Ollama no está corriendo."
-    echo "    Inicia Ollama con:  ollama serve"
-    echo "    Luego asegúrate de tener el modelo:  ollama pull qwen2.5:7b"
-    echo "    Y el embedding:  ollama pull nomic-embed-text"
+# 2. Verificar GROQ_API_KEY
+if [ -z "$GROQ_API_KEY" ] || [ "$GROQ_API_KEY" = "your_groq_api_key_here" ]; then
+    echo "❌  GROQ_API_KEY no configurado en .env"
+    echo "    Regístrate gratis en https://console.groq.com y pega tu API key"
     exit 1
 fi
-echo "✅  Ollama OK"
+echo "✅  Groq API key OK"
 
-# 3. Verificar datos en ChromaDB
+# 3. Verificar/cargar datos en ChromaDB
 echo ""
-echo "🗄️   Verificando datos en ChromaDB ($DB_PATH)..."
-TOTAL=$(python3 - <<PYEOF 2>/dev/null
-import os, chromadb
+echo "🗄️   Verificando ChromaDB ($DB_PATH)..."
+
+TOTAL=$(python3 - <<'PYEOF' 2>/dev/null
+import os, sys, chromadb
 from dotenv import load_dotenv
 load_dotenv()
 db = os.getenv("DB_PATH", "./db")
@@ -56,47 +48,44 @@ except Exception:
 PYEOF
 )
 
-if [ "$TOTAL" -eq "0" ] 2>/dev/null; then
-    echo "📥  ChromaDB vacío. Cargando datos turísticos..."
+if [ "${TOTAL:-0}" -eq "0" ] 2>/dev/null; then
+    echo "📥  ChromaDB vacío. Indexando datos turísticos (primera vez puede tardar 1-2 min)..."
     python3 cargar_datos.py datos/
-    echo "✅  Datos cargados"
+    echo "✅  Datos indexados"
 else
-    echo "✅  ChromaDB OK ($TOTAL lugares cargados)"
+    echo "✅  ChromaDB OK ($TOTAL lugares)"
 fi
 
-# 4. Iniciar API FastAPI en background
+# 4. Iniciar API en background
 echo ""
-echo "🚀  Iniciando API en el puerto $API_PORT..."
+echo "🚀  Iniciando API (puerto $API_PORT)..."
 uvicorn api:app --host 0.0.0.0 --port "$API_PORT" --log-level warning &
 API_PID=$!
 
-# Esperar a que la API responda (hasta 20 segundos)
 echo "⏳  Esperando que la API esté lista..."
-for i in $(seq 1 20); do
+for i in $(seq 1 25); do
     if curl -sf "http://localhost:$API_PORT/" > /dev/null 2>&1; then
-        echo "✅  API lista en http://localhost:$API_PORT"
+        echo "✅  API lista → http://localhost:$API_PORT"
         break
     fi
     sleep 1
-    if [ "$i" -eq "20" ]; then
-        echo "❌  La API no respondió en 20 segundos. Revisa los logs."
+    if [ "$i" -eq "25" ]; then
+        echo "❌  La API no respondió. Revisa los logs arriba."
         kill $API_PID 2>/dev/null
         exit 1
     fi
 done
 
-# 5. Iniciar bot de Telegram
+# 5. Iniciar bot
 echo ""
 echo "🤖  Iniciando bot de Telegram..."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "    Bot corriendo. Presiona Ctrl+C para detener."
+echo "    ✅ Bot corriendo. Presiona Ctrl+C para detener."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Capturar Ctrl+C para limpiar procesos correctamente
-trap "echo ''; echo '🛑  Deteniendo...'; kill $API_PID 2>/dev/null; exit 0" INT TERM
+trap "echo ''; echo '🛑 Deteniendo...'; kill $API_PID 2>/dev/null; exit 0" INT TERM
 
 python3 bot.py
 
-# Cleanup si el bot termina solo
 kill $API_PID 2>/dev/null

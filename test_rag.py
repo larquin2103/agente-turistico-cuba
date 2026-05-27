@@ -1,32 +1,20 @@
 import os
 from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Settings, StorageContext
-from llama_index.llms.ollama import Ollama
-from llama_index.embeddings.ollama import OllamaEmbedding
+from llama_index.llms.groq import Groq
+from llama_index.embeddings.fastembed import FastEmbedEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 import chromadb
 
 load_dotenv()
 
-DB_PATH      = os.getenv("DB_PATH", "./db")
-OLLAMA_URL   = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+DB_PATH     = os.getenv("DB_PATH", "./db")
+GROQ_KEY    = os.getenv("GROQ_API_KEY")
+GROQ_MODEL  = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 
-Settings.llm = Ollama(
-    model=OLLAMA_MODEL,
-    base_url=OLLAMA_URL,
-    request_timeout=120.0,
-    system_prompt=(
-        "Eres un agente turístico experto en Cuba, especialmente en La Habana. "
-        "Responde SIEMPRE en español. Usa únicamente la información del contexto "
-        "proporcionado. Incluye detalles como dirección, teléfono, calificación "
-        "y horarios cuando los tengas disponibles."
-    )
-)
-Settings.embed_model = OllamaEmbedding(
-    model_name="nomic-embed-text",
-    base_url=OLLAMA_URL
-)
+Settings.llm = Groq(model=GROQ_MODEL, api_key=GROQ_KEY, request_timeout=60.0)
+Settings.embed_model = FastEmbedEmbedding(model_name=EMBED_MODEL)
 
 chroma_client = chromadb.PersistentClient(path=DB_PATH)
 chroma_collection = chroma_client.get_or_create_collection("lugares_turisticos")
