@@ -3,6 +3,8 @@ import type { Orientation } from "../../Video";
 import { fontFamily } from "../../fonts";
 import { visualBox } from "./_layout";
 
+const DEMO_URL = "dentbotsonrisa.netlify.app";
+
 export const CallToAction: React.FC<{
   orientation: Orientation;
   color: string;
@@ -11,175 +13,127 @@ export const CallToAction: React.FC<{
   const { fps } = useVideoConfig();
 
   const ctaSpring = spring({ frame: frame - 10, fps, config: { damping: 12 } });
-  const qrSpring = spring({ frame: frame - 30, fps, config: { damping: 13 } });
+  const linkSpring = spring({ frame: frame - 26, fps, config: { damping: 13 } });
 
-  const pulse = 1 + Math.sin(frame * 0.15) * 0.04;
+  const pulse = 1 + Math.sin(frame * 0.13) * 0.03;
+  const glow = 0.4 + Math.sin(frame * 0.13) * 0.2;
+
+  const linkSize = orientation === "portrait" ? 30 : 36;
 
   return (
     <div style={visualBox(orientation)}>
       <div
         style={{
           width: "100%",
-          maxWidth: 900,
+          maxWidth: 760,
           margin: "0 auto",
           display: "flex",
-          flexDirection: orientation === "portrait" ? "column" : "row",
+          flexDirection: "column",
           alignItems: "center",
-          gap: 40,
+          textAlign: "center",
+          gap: 22,
         }}
       >
-        {/* CTA Button + phone */}
+        {/* Label */}
         <div
           style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
+            fontSize: 13,
+            color: "#888",
+            fontFamily: fontFamily.mono,
+            letterSpacing: 5,
+            textTransform: "uppercase",
             opacity: interpolate(ctaSpring, [0, 1], [0, 1]),
-            transform: `scale(${interpolate(ctaSpring, [0, 1], [0.8, 1])})`,
           }}
         >
-          <div
-            style={{
-              fontSize: 12,
-              color: "#888",
-              fontFamily: fontFamily.mono,
-              letterSpacing: 4,
-              textTransform: "uppercase",
-            }}
-          >
-            ✦ Demo gratuita
-          </div>
-
-          <div
-            style={{
-              background: "#25d366",
-              color: "#000",
-              padding: "20px 28px",
-              borderRadius: 18,
-              fontSize: orientation === "portrait" ? 26 : 32,
-              fontFamily: fontFamily.body,
-              fontWeight: 700,
-              display: "flex",
-              alignItems: "center",
-              gap: 14,
-              transform: `scale(${pulse})`,
-              boxShadow: "0 0 40px rgba(37,211,102,0.4)",
-            }}
-          >
-            <span style={{ fontSize: 36 }}>💬</span>
-            <span>+52 55 1234 5678</span>
-          </div>
-
-          <div
-            style={{
-              fontSize: 18,
-              color: "#f0ead8",
-              fontFamily: fontFamily.display,
-              fontStyle: "italic",
-              marginTop: 8,
-            }}
-          >
-            “Tu agente listo en 15 minutos.”
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              marginTop: 12,
-              flexWrap: "wrap",
-            }}
-          >
-            {["Sin contratos", "Operativo hoy", "Setup en 15 min"].map((t, i) => (
-              <div
-                key={i}
-                style={{
-                  background: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 999,
-                  padding: "6px 14px",
-                  fontSize: 13,
-                  color: "#ccc",
-                  fontFamily: fontFamily.body,
-                }}
-              >
-                ✓ {t}
-              </div>
-            ))}
-          </div>
+          ✦ Demo en vivo · gratis
         </div>
 
-        {/* QR Code */}
+        {/* Big globe / icon */}
         <div
           style={{
-            background: "#fff",
-            padding: 18,
-            borderRadius: 16,
-            opacity: interpolate(qrSpring, [0, 1], [0, 1]),
-            transform: `scale(${interpolate(qrSpring, [0, 1], [0.7, 1])})`,
-            boxShadow: "0 0 50px rgba(255,255,255,0.1)",
+            fontSize: orientation === "portrait" ? 56 : 64,
+            opacity: interpolate(ctaSpring, [0, 1], [0, 1]),
+            transform: `scale(${interpolate(ctaSpring, [0, 1], [0.6, 1])})`,
           }}
         >
-          <FakeQR size={orientation === "portrait" ? 180 : 220} />
-          <div
-            style={{
-              fontSize: 11,
-              color: "#000",
-              textAlign: "center",
-              marginTop: 8,
-              fontFamily: fontFamily.mono,
-              letterSpacing: 2,
-            }}
-          >
-            ESCANÉAME
-          </div>
+          🌐
+        </div>
+
+        {/* Link button (single CTA) */}
+        <div
+          style={{
+            opacity: interpolate(linkSpring, [0, 1], [0, 1]),
+            transform: `scale(${
+              interpolate(linkSpring, [0, 1], [0.85, 1]) * pulse
+            })`,
+            background:
+              "linear-gradient(135deg, #4c9ac9 0%, #4cc9a8 100%)",
+            color: "#03120f",
+            padding: orientation === "portrait" ? "20px 28px" : "24px 40px",
+            borderRadius: 18,
+            fontSize: linkSize,
+            fontFamily: fontFamily.mono,
+            fontWeight: 700,
+            letterSpacing: -0.5,
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            boxShadow: `0 0 ${40 + glow * 40}px rgba(76,201,168,${glow})`,
+            maxWidth: "100%",
+            wordBreak: "break-all",
+          }}
+        >
+          <span style={{ opacity: 0.6, fontSize: linkSize * 0.7 }}>https://</span>
+          {DEMO_URL}
+        </div>
+
+        {/* Tagline */}
+        <div
+          style={{
+            fontSize: orientation === "portrait" ? 20 : 22,
+            color: "#f0ead8",
+            fontFamily: fontFamily.display,
+            fontStyle: "italic",
+            opacity: interpolate(frame, [40, 58], [0, 1], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            }),
+          }}
+        >
+          “Tu agente listo en 15 minutos.”
+        </div>
+
+        {/* Chips */}
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            justifyContent: "center",
+            opacity: interpolate(frame, [52, 70], [0, 1], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            }),
+          }}
+        >
+          {["Sin contratos", "Operativo hoy", "Setup en 15 min"].map((t, i) => (
+            <div
+              key={i}
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: 999,
+                padding: "7px 16px",
+                fontSize: 14,
+                color: "#ccc",
+                fontFamily: fontFamily.body,
+              }}
+            >
+              ✓ {t}
+            </div>
+          ))}
         </div>
       </div>
     </div>
-  );
-};
-
-// Decorative QR (not a real code — for the visual)
-const FakeQR: React.FC<{ size: number }> = ({ size }) => {
-  const grid = 21;
-  // deterministic pattern
-  const cells: boolean[] = Array.from({ length: grid * grid }).map((_, i) => {
-    return ((i * 17 + Math.floor(i / grid) * 31) % 7) % 3 === 0;
-  });
-
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${grid} ${grid}`}
-      style={{ display: "block" }}
-    >
-      <rect width={grid} height={grid} fill="#fff" />
-      {cells.map((on, i) => {
-        if (!on) return null;
-        const x = i % grid;
-        const y = Math.floor(i / grid);
-        // Reserve corners for finder patterns
-        const inFinder =
-          (x < 7 && y < 7) ||
-          (x > grid - 8 && y < 7) ||
-          (x < 7 && y > grid - 8);
-        if (inFinder) return null;
-        return <rect key={i} x={x} y={y} width="1" height="1" fill="#000" />;
-      })}
-      {/* Finder patterns */}
-      {[
-        [0, 0],
-        [grid - 7, 0],
-        [0, grid - 7],
-      ].map(([fx, fy], idx) => (
-        <g key={idx}>
-          <rect x={fx} y={fy} width="7" height="7" fill="#000" />
-          <rect x={fx + 1} y={fy + 1} width="5" height="5" fill="#fff" />
-          <rect x={fx + 2} y={fy + 2} width="3" height="3" fill="#000" />
-        </g>
-      ))}
-    </svg>
   );
 };

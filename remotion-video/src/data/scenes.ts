@@ -47,11 +47,11 @@ const rawScenes: RawScene[] = [
     act: "INTRO",
     actLabel: "INTRO",
     duration: 9,
-    title: "El problema que nadie quiere vivir",
+    title: "El problema que frena a tu territorio",
     visual:
       "Pantalla negra. Teléfono sonando a las 11:30 PM. Nadie contesta. Tres mensajes de WhatsApp sin respuesta con ticks grises.",
     narration:
-      "Son las 11 de la noche. Tu cliente potencial está listo para comprar… pero nadie responde.",
+      "Son las 11 de la noche. En tu comunidad, un cliente está listo para comprar… pero nadie responde. Y esa oportunidad no vuelve.",
     stat: null,
     hook: "El 67% de los clientes elige al competidor que responde primero.",
     color: "#c9a84c",
@@ -66,7 +66,7 @@ const rawScenes: RawScene[] = [
     visual:
       "Contador en rojo: llamadas perdidas, mensajes sin responder, citas canceladas. Gráfica de ingresos bajando.",
     narration:
-      "Cada mensaje sin respuesta es una venta perdida. Una cita cancelada. Un cliente que no vuelve.",
+      "Cada mensaje sin responder es una venta que tu negocio —y tu territorio— deja escapar. Una cita perdida. Un cliente que no vuelve.",
     stat: "1 de cada 3 cancelaciones ocurre porque nadie confirmó la cita a tiempo.",
     hook: null,
     color: "#e05c5c",
@@ -77,13 +77,13 @@ const rawScenes: RawScene[] = [
     act: "SOLUCION",
     actLabel: "SOLUCIÓN",
     duration: 9,
-    title: "Presentamos la solución",
+    title: "Inteligencia artificial al alcance de todos",
     visual:
       "Transición a azul brillante. Logo del producto. WhatsApp y Telegram abiertos. Respuesta instantánea en 2 segundos.",
     narration:
-      "Presentamos tu Agente Inteligente 24/7 — un asistente con IA que conoce tu negocio mejor que cualquier empleado.",
+      "Presentamos tu Agente Inteligente 24/7: tecnología de punta al alcance de cualquier negocio de tu región, que conoce tu negocio mejor que nadie.",
     stat: null,
-    hook: "Responde en WhatsApp y Telegram. Sin apps. Sin instalaciones.",
+    hook: "Responde en WhatsApp y Telegram. Sin apps. Sin barreras.",
     color: "#4c9ac9",
     bg: "#03080f",
   },
@@ -96,8 +96,8 @@ const rawScenes: RawScene[] = [
     visual:
       "Animación: documentos PDF entrando a una caja → cerebro con IA → burbuja de chat respondiendo.",
     narration:
-      "Sube tus precios, servicios y políticas. El agente los aprende en minutos. Y responde exactamente como tú lo harías.",
-    stat: "Configuración en menos de 15 minutos. Sin programar nada.",
+      "Subes tus precios, servicios y políticas. La IA los aprende en minutos y responde como tú lo harías. Sin saber programar nada.",
+    stat: "Configuración en menos de 15 minutos. Tecnología avanzada, uso simple.",
     hook: null,
     color: "#4cc9a8",
     bg: "#030f0c",
@@ -111,7 +111,7 @@ const rawScenes: RawScene[] = [
     visual:
       "Persona con dolor de muela a las 12 AM escribe en WhatsApp. El agente responde en 2 segundos con horarios y precio.",
     narration:
-      "Tu paciente tiene dolor a medianoche. Tu agente le responde de inmediato, le da opciones de cita y le tranquiliza.",
+      "Tu paciente tiene dolor a medianoche. El agente le responde de inmediato, le da opciones de cita y lo tranquiliza. Eso es satisfacción real.",
     stat: null,
     hook: "El paciente duerme tranquilo. Y la cita ya está agendada.",
     color: "#c94c7a",
@@ -126,7 +126,7 @@ const rawScenes: RawScene[] = [
     visual:
       "Pantalla dividida: ANTES (citas canceladas) / DESPUÉS (agente enviando recordatorios automáticos).",
     narration:
-      "El agente recuerda la cita 24 horas antes y 2 horas antes. Si el paciente no puede, reagenda en ese mismo momento.",
+      "El agente recuerda la cita 24 y 2 horas antes. Si el paciente no puede, reagenda al momento. Menos cancelaciones y más confianza en tu servicio.",
     stat: "Las clínicas con recordatorios automáticos reducen cancelaciones hasta un 70%.",
     hook: null,
     color: "#c94c7a",
@@ -137,11 +137,11 @@ const rawScenes: RawScene[] = [
     act: "CLINICA_DENTAL",
     actLabel: "CLÍNICA DENTAL",
     duration: 12,
-    title: "Responde preguntas repetitivas",
+    title: "Libera el tiempo de tu equipo",
     visual:
       "Asistente real agotada respondiendo lo mismo. Corte: el agente responde — precios, horarios, formas de pago.",
     narration:
-      "¿Cuánto cuesta una limpieza? ¿Trabajan con seguro? Tu equipo deja de repetir lo mismo 30 veces al día.",
+      "Precios, horarios, formas de pago… Tu equipo deja de repetir lo mismo 30 veces al día y se enfoca en lo que importa: atender mejor a las personas.",
     stat: "Tu equipo recupera 3-4 horas al día para pacientes presenciales.",
     hook: null,
     color: "#c94c7a",
@@ -152,11 +152,11 @@ const rawScenes: RawScene[] = [
     act: "CLINICA_DENTAL",
     actLabel: "CLÍNICA DENTAL",
     duration: 9,
-    title: "Resultado clínica dental",
+    title: "Un negocio local que crece",
     visual:
       "Dashboard: +40% citas, -65% cancelaciones, 0 llamadas perdidas. Dentista sonriendo.",
     narration:
-      "Más citas. Menos cancelaciones. Menos trabajo repetitivo. Y pacientes que se sienten atendidos.",
+      "Más citas, menos cancelaciones, pacientes que se sienten atendidos. Un negocio local que crece y da mejor servicio a su comunidad.",
     stat: "+40% citas · -65% cancelaciones · 0 llamadas sin respuesta",
     hook: null,
     color: "#c94c7a",
@@ -171,7 +171,7 @@ const rawScenes: RawScene[] = [
     visual:
       "Aeropuerto, 2 AM. Viajero confundido escribe a la agencia. El agente responde al instante con todos los detalles del hotel.",
     narration:
-      "Tu cliente está en el aeropuerto a las 2 de la mañana. Tu agente ya está ahí — respondiendo, guiando, tranquilizando.",
+      "Tu cliente está en el aeropuerto a las 2 de la mañana. El agente ya está ahí: respondiendo, guiando, tranquilizando. Satisfacción en el momento exacto.",
     stat: null,
     hook: "El check-in promedio genera 4-6 preguntas urgentes. Fuera de horario.",
     color: "#4c7ac9",
@@ -182,11 +182,11 @@ const rawScenes: RawScene[] = [
     act: "TURISMO",
     actLabel: "TURISMO",
     duration: 12,
-    title: "Ventas mientras duermes",
+    title: "Compite de igual a igual",
     visual:
       "Familia navegando paquetes a las 10 PM. Preguntan por Cancún. El agente cierra la venta.",
     narration:
-      "Cuando tu competencia está dormida, tu agente está cerrando ventas, enviando cotizaciones y confirmando reservas.",
+      "Cuando la competencia duerme, tu agente cierra ventas y confirma reservas. Tu negocio compite de igual a igual, sin importar su tamaño.",
     stat: "El 58% de las consultas de viaje ocurren fuera del horario de oficina.",
     hook: null,
     color: "#4c7ac9",
@@ -197,11 +197,11 @@ const rawScenes: RawScene[] = [
     act: "TURISMO",
     actLabel: "TURISMO",
     duration: 11,
-    title: "Soporte completo durante el viaje",
+    title: "Acompañamiento que genera reputación",
     visual:
       "Timeline: reserva → documentos → check-in → preguntas en destino → post-viaje. El agente presente en cada etapa.",
     narration:
-      "Antes del viaje: documentos. Durante: soporte inmediato. Después: encuesta y próxima oferta. Todo automático.",
+      "Antes, durante y después del viaje, el agente acompaña en cada etapa. El cliente se siente cuidado y vuelve. Así se construye reputación en tu territorio.",
     stat: "El cliente se siente acompañado — sin contratar más personal.",
     hook: null,
     color: "#4c7ac9",
@@ -212,11 +212,11 @@ const rawScenes: RawScene[] = [
     act: "TURISMO",
     actLabel: "TURISMO",
     duration: 9,
-    title: "Resultado agencia de turismo",
+    title: "Clientes satisfechos, comunidad fuerte",
     visual:
       "Dashboard: +55% conversión, 100% mensajes respondidos, 4.9★ satisfacción.",
     narration:
-      "Más ventas. Mejor experiencia. Clientes que regresan. Y tú, disfrutando tu noche mientras el negocio trabaja solo.",
+      "Más ventas, mejor experiencia, clientes que regresan y recomiendan. Cada negocio satisfecho fortalece la economía de su comunidad.",
     stat: "+55% conversión · 100% mensajes respondidos · 4.9★ satisfacción",
     hook: null,
     color: "#4c7ac9",
@@ -227,11 +227,11 @@ const rawScenes: RawScene[] = [
     act: "VENTAJAS",
     actLabel: "VENTAJAS",
     duration: 11,
-    title: "Por qué WhatsApp y Telegram",
+    title: "IA inclusiva: WhatsApp y Telegram",
     visual:
       "Comparativa: App nueva (nadie la descarga) vs WhatsApp (todos la tienen). 93% de penetración en Latinoamérica.",
     narration:
-      "No le pides a tu cliente que descargue una app nueva. Le escribes por donde ya te escribe. Donde ya confía.",
+      "No le pides a nadie que descargue una app nueva. Le escribes por donde ya te escribe. Inteligencia artificial inclusiva, que llega a todos en tu región.",
     stat: "93% de penetración de WhatsApp en Latinoamérica.",
     hook: null,
     color: "#c9a84c",
@@ -242,11 +242,11 @@ const rawScenes: RawScene[] = [
     act: "VENTAJAS",
     actLabel: "VENTAJAS",
     duration: 9,
-    title: "Solo sabe lo que tú le enseñas",
+    title: "Confianza, no confusión",
     visual:
       "El agente responde SOLO con información de la empresa. 'No tengo esa información, te pongo en contacto con un asesor.'",
     narration:
-      "El agente no improvisa. Solo responde con la información que tú le das. Si no lo sabe, lo dice.",
+      "El agente no improvisa. Solo responde con tu información. Si no lo sabe, lo dice y conecta con tu equipo. IA confiable para tu negocio.",
     stat: "Cero respuestas inventadas · Cero precios incorrectos · Cero malentendidos.",
     hook: null,
     color: "#c9a84c",
@@ -257,11 +257,11 @@ const rawScenes: RawScene[] = [
     act: "VENTAJAS",
     actLabel: "VENTAJAS",
     duration: 10,
-    title: "Crece con tu negocio",
+    title: "El pequeño negocio atiende como uno grande",
     visual:
       "Un bot → 10 conversaciones. Mismo bot → 500 conversaciones simultáneas. Sin contratar más gente.",
     narration:
-      "¿Tienes 10 clientes o 500? El agente responde a todos al mismo tiempo, con la misma calidad, sin demoras.",
+      "¿10 clientes o 500? El agente responde a todos con la misma calidad y velocidad. El pequeño negocio de tu barrio atiende como uno grande.",
     stat: "Maneja 500 conversaciones simultáneas con la misma velocidad.",
     hook: null,
     color: "#c9a84c",
@@ -272,13 +272,13 @@ const rawScenes: RawScene[] = [
     act: "CIERRE",
     actLabel: "CIERRE",
     duration: 9,
-    title: "Para cualquier tipo de negocio",
+    title: "IA para cada negocio de tu territorio",
     visual:
       "Carrusel: clínica dental · agencia de turismo · restaurante · inmobiliaria · academia · spa · tienda · consultorio.",
     narration:
-      "¿Tienes clientes que te hacen preguntas repetitivas? ¿Pierdes ventas fuera de horario? Esto es para ti.",
+      "Clínicas, agencias, restaurantes, tiendas… Cuando cada negocio de tu comunidad adopta IA, todo el territorio crece, compite y prospera.",
     stat: null,
-    hook: "Si tienes clientes, tienes un caso de uso.",
+    hook: "Cada negocio que mejora hace más fuerte a toda su comunidad.",
     color: "#a84cc9",
     bg: "#0a030f",
   },
@@ -287,13 +287,13 @@ const rawScenes: RawScene[] = [
     act: "CIERRE",
     actLabel: "CIERRE",
     duration: 11,
-    title: "Agenda tu demo gratis",
+    title: "Prueba la demo en vivo",
     visual:
-      "Fondo negro elegante. Número de WhatsApp. QR code. 'Agenda tu demo gratis'. 'Tu agente listo en 15 minutos'.",
+      "Fondo negro elegante. Enlace de la demo grande y centrado: dentbotsonrisa.netlify.app. 'Tu agente listo en 15 minutos.'",
     narration:
-      "¿Quieres ver cómo funciona con tu negocio? Agenda una demo gratuita. En 15 minutos configuras tu agente.",
+      "Descubre cómo la inteligencia artificial transforma tu negocio y aporta al desarrollo de tu territorio. Prueba la demo ahora mismo.",
     stat: null,
-    hook: "Demo gratuita · Sin contratos · Operativo hoy mismo",
+    hook: "Demo en vivo · Sin contratos · Operativo hoy mismo",
     color: "#ffffff",
     bg: "#050505",
   },
