@@ -87,10 +87,10 @@ export const ProblemPhone: React.FC<{ orientation: Orientation }> = ({
             ◉ LLAMADA PERDIDA
           </div>
           <div style={{ fontSize: 18, color: "#fff", fontWeight: 600 }}>
-            Cliente potencial
+            Usuario sin atender
           </div>
           <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
-            +52 55 8421 9032
+            +53 5 384 2190
           </div>
         </div>
 

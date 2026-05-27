@@ -4,16 +4,16 @@ import { fontFamily } from "../../fonts";
 import { visualBox } from "./_layout";
 
 const businesses = [
-  { icon: "🦷", name: "Clínica Dental" },
-  { icon: "✈️", name: "Agencia de Turismo" },
-  { icon: "🍽", name: "Restaurante" },
-  { icon: "🏠", name: "Inmobiliaria" },
-  { icon: "🎓", name: "Academia" },
-  { icon: "💆", name: "Spa" },
-  { icon: "🛍", name: "Tienda" },
-  { icon: "🩺", name: "Consultorio Médico" },
-  { icon: "💪", name: "Gimnasio" },
-  { icon: "🚗", name: "Concesionaria" },
+  { icon: "🩺", name: "Policlínico" },
+  { icon: "🏥", name: "Hospital" },
+  { icon: "🦷", name: "Consultorio Dental" },
+  { icon: "💊", name: "Farmacia" },
+  { icon: "🚑", name: "Urgencias" },
+  { icon: "✈️", name: "Agencia de Viajes" },
+  { icon: "🏨", name: "Hotel" },
+  { icon: "🏠", name: "Casa Particular" },
+  { icon: "🏛", name: "Centro Histórico" },
+  { icon: "🏖", name: "Playa Santa Lucía" },
 ];
 
 export const BusinessCarousel: React.FC<{

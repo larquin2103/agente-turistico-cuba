@@ -131,7 +131,7 @@ export const LostMoney: React.FC<{ orientation: Orientation }> = ({
               marginBottom: 8,
             }}
           >
-            INGRESOS · ÚLTIMOS 10 DÍAS
+            ATENCIÓN OPORTUNA · ÚLTIMOS 10 DÍAS
           </div>
           <div style={{ fontSize: 28, color: "#e05c5c", fontWeight: 700 }}>
             ↓ −34%

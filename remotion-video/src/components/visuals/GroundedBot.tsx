@@ -42,7 +42,7 @@ export const GroundedBot: React.FC<{
             }),
           }}
         >
-          ¿A qué hora abre la sucursal de Polanco?
+          ¿A qué hora abre la consulta el sábado?
         </div>
 
         {/* Bot honest response */}
@@ -93,7 +93,7 @@ export const GroundedBot: React.FC<{
         >
           {[
             { icon: "✗", text: "Cero respuestas inventadas" },
-            { icon: "✗", text: "Cero precios incorrectos" },
+            { icon: "✗", text: "Cero datos incorrectos" },
             { icon: "✗", text: "Cero malentendidos" },
           ].map((c, i) => (
             <div

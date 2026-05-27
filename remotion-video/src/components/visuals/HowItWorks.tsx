@@ -4,7 +4,7 @@ import { fontFamily } from "../../fonts";
 import { visualBox } from "./_layout";
 
 const steps = [
-  { icon: "📄", title: "Subes", sub: "Precios, servicios, políticas" },
+  { icon: "📄", title: "Subes", sub: "Servicios, horarios, protocolos" },
   { icon: "🧠", title: "Aprende", sub: "IA entrena en minutos" },
   { icon: "💬", title: "Responde", sub: "24/7 como tú lo harías" },
 ];

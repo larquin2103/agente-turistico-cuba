@@ -47,9 +47,9 @@ export const SceneVisual: React.FC<{
           orientation={orientation}
           color={scene.color}
           metrics={[
-            { label: "Citas agendadas", value: "+40%", trend: "up" },
+            { label: "Citas confirmadas", value: "+40%", trend: "up" },
             { label: "Cancelaciones", value: "-65%", trend: "down-good" },
-            { label: "Llamadas perdidas", value: "0", trend: "up" },
+            { label: "Mensajes sin responder", value: "0", trend: "up" },
           ]}
         />
       );
@@ -77,7 +77,7 @@ export const SceneVisual: React.FC<{
           orientation={orientation}
           color={scene.color}
           metrics={[
-            { label: "Conversión", value: "+55%", trend: "up" },
+            { label: "Reservas confirmadas", value: "+55%", trend: "up" },
             { label: "Mensajes resp.", value: "100%", trend: "up" },
             { label: "Satisfacción", value: "4.9★", trend: "up" },
           ]}
