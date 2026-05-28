@@ -50,10 +50,46 @@ def guardar_callback(formato: str, nombres: list) -> str:
 # UTILIDADES
 # ──────────────────────────────────────────────────────────
 
+def detectar_lugares(texto: str) -> list:
+    """Extrae todos los nombres de lugar de la respuesta del LLM usando múltiples patrones."""
+    nombres = []
+    seen = set()
+
+    def agregar(name: str):
+        name = re.sub(r"[.:,;!?]$", "", name).strip()
+        if len(name) > 3 and name.lower() not in seen:
+            seen.add(name.lower())
+            nombres.append(name)
+
+    # Patrón 1: **Nombre en negritas** (más confiable)
+    for m in re.finditer(r"\*\*([A-ZÁÉÍÓÚÑ][^*\n]{2,60})\*\*", texto):
+        agregar(m.group(1))
+    if nombres:
+        return nombres
+
+    # Patrón 2: Lista numerada "1. Nombre" al inicio de línea
+    for m in re.finditer(r"(?:^|\n)\d+[\.\)]\s+([A-ZÁÉÍÓÚÑ][^\n:]{3,60})", texto):
+        agregar(m.group(1))
+    if nombres:
+        return nombres
+
+    # Patrón 3: Lista con guión/bala "- Nombre" o "• Nombre"
+    for m in re.finditer(r"(?:^|\n)[-•]\s+([A-ZÁÉÍÓÚÑ][^\n:]{3,60})", texto):
+        agregar(m.group(1))
+    if nombres:
+        return nombres
+
+    # Patrón 4: Nombre al inicio de línea con negritas opcionales (fallback)
+    for m in re.finditer(r"(?:^|\n)\*{0,2}([A-ZÁÉÍÓÚÑ][^*\n]{3,50})\*{0,2}(?:\n|$)", texto):
+        agregar(m.group(1))
+
+    return nombres
+
+
 def detectar_lugar(texto: str) -> str:
-    """Extrae el primer nombre de lugar en negritas de la respuesta RAG."""
-    match = re.search(r"(?:^|\n)\*{0,2}([A-ZÁÉÍÓÚÑ][^*\n]{3,50})\*{0,2}(?:\n|$)", texto)
-    return match.group(1).strip() if match else None
+    """Extrae el primer nombre de lugar de la respuesta del LLM."""
+    nombres = detectar_lugares(texto)
+    return nombres[0] if nombres else None
 
 
 def extraer_campo_texto(texto: str, campo: str) -> str:
@@ -320,8 +356,9 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
             stop_typing.set()
             respuesta = data["respuesta"]
 
-            nombre_lugar = detectar_lugar(respuesta)
-            lugar_datos  = None
+            nombres_lugares = detectar_lugares(respuesta)
+            nombre_lugar    = nombres_lugares[0] if nombres_lugares else None
+            lugar_datos     = None
 
             if nombre_lugar:
                 ultimos_lugares[usuario_id] = nombre_lugar
@@ -330,7 +367,43 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(respuesta)
 
             if lugar_datos:
+                # Tarjeta con imagen + botones KML/GPX para el primer lugar
                 await enviar_tarjeta_lugar(update, lugar_datos)
+                # Si hay más de un lugar mencionado, ofrecer mapa combinado
+                if len(nombres_lugares) > 1:
+                    teclado = InlineKeyboardMarkup([[
+                        InlineKeyboardButton(
+                            f"🗺️ KML ({len(nombres_lugares)} lugares)",
+                            callback_data=f"map|{guardar_callback('kml', nombres_lugares)}"
+                        ),
+                        InlineKeyboardButton(
+                            f"📍 GPX ({len(nombres_lugares)} lugares)",
+                            callback_data=f"map|{guardar_callback('gpx', nombres_lugares)}"
+                        )
+                    ]])
+                    await update.message.reply_text(
+                        f"🗺️ ¿Quieres un mapa con los *{len(nombres_lugares)} lugares* mencionados?",
+                        parse_mode="Markdown",
+                        reply_markup=teclado
+                    )
+            elif nombres_lugares:
+                # No hay datos en BD pero sí se detectaron nombres → mostrar botones de mapa
+                label = nombre_lugar if len(nombres_lugares) == 1 else f"{len(nombres_lugares)} lugares"
+                teclado = InlineKeyboardMarkup([[
+                    InlineKeyboardButton(
+                        "🗺️ KML",
+                        callback_data=f"map|{guardar_callback('kml', nombres_lugares)}"
+                    ),
+                    InlineKeyboardButton(
+                        "📍 GPX",
+                        callback_data=f"map|{guardar_callback('gpx', nombres_lugares)}"
+                    )
+                ]])
+                await update.message.reply_text(
+                    f"📍 ¿Quieres el mapa de *{label}* para navegar sin internet?",
+                    parse_mode="Markdown",
+                    reply_markup=teclado
+                )
 
     except httpx.ConnectError:
         stop_typing.set()
@@ -434,20 +507,27 @@ async def manejar_botones(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
     try:
-        nombre_principal = nombres[0]
+        # Intentar cada nombre hasta obtener un mapa válido
+        response_ok = None
+        nombre_exitoso = None
         async with httpx.AsyncClient(timeout=30) as client:
-            response = await client.post(
-                f"{API_URL}/mapa/{formato_real}",
-                json={"place_id": "", "nombre": nombre_principal},
-                headers={"x-api-key": API_KEY}
-            )
+            for nombre_candidato in nombres:
+                resp = await client.post(
+                    f"{API_URL}/mapa/{formato_real}",
+                    json={"place_id": "", "nombre": nombre_candidato},
+                    headers={"x-api-key": API_KEY}
+                )
+                if resp.status_code == 200:
+                    response_ok = resp
+                    nombre_exitoso = nombre_candidato
+                    break
 
-        if response.status_code == 200:
-            nombre_arch = nombre_principal.replace(" ", "_")[:30]
+        if response_ok:
+            nombre_arch = nombre_exitoso.replace(" ", "_")[:30]
             ruta_temp   = f"{nombre_arch}.{formato_real}"
 
             with open(ruta_temp, "wb") as f:
-                f.write(response.content)
+                f.write(response_ok.content)
 
             instrucciones = (
                 "📱 *Cómo usar en OsmAnd:*\n"
@@ -470,7 +550,8 @@ async def manejar_botones(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         else:
             await query.message.reply_text(
-                f"No encontré coordenadas GPS para *{nombre_principal}*.",
+                f"No encontré coordenadas GPS para *{label}*.\n"
+                "Este lugar puede no tener datos de ubicación en nuestra base de datos.",
                 parse_mode="Markdown"
             )
 
