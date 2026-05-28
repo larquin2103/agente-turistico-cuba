@@ -2,14 +2,14 @@ import chromadb
 import os
 from dotenv import load_dotenv
 from llama_index.core import Settings
-from llama_index.embeddings.fastembed import FastEmbedEmbedding
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 load_dotenv()
 
 DB_PATH     = os.getenv("DB_PATH", "./db")
 EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 
-Settings.embed_model = FastEmbedEmbedding(model_name=EMBED_MODEL)
+Settings.embed_model = HuggingFaceEmbedding(model_name=EMBED_MODEL)
 
 client = chromadb.PersistentClient(path=DB_PATH)
 col = client.get_or_create_collection("lugares_turisticos")

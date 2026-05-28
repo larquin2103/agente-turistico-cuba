@@ -6,7 +6,7 @@ import os
 from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Settings, StorageContext
 from llama_index.llms.groq import Groq
-from llama_index.embeddings.fastembed import FastEmbedEmbedding
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from generador_mapas import generar_kml, generar_gpx, extraer_coordenadas, parsear_documento
 from ubicacion import lugares_cercanos, texto_a_coordenadas, formatear_respuesta_cercania
@@ -42,7 +42,7 @@ Settings.llm = Groq(
     api_key=GROQ_KEY,
     request_timeout=60.0
 )
-Settings.embed_model = FastEmbedEmbedding(model_name=EMBED_MODEL)
+Settings.embed_model = HuggingFaceEmbedding(model_name=EMBED_MODEL)
 
 chroma_client = chromadb.PersistentClient(path=DB_PATH)
 chroma_collection = chroma_client.get_or_create_collection("lugares_turisticos")

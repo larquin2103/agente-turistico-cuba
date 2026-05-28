@@ -3,7 +3,7 @@ import os
 import chromadb
 from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Document, Settings, StorageContext
-from llama_index.embeddings.fastembed import FastEmbedEmbedding
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 
 load_dotenv()
@@ -12,7 +12,7 @@ DB_PATH     = os.getenv("DB_PATH", "./db")
 EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 
 # Solo necesitamos embeddings para indexar (el LLM no se usa aquí)
-Settings.embed_model = FastEmbedEmbedding(model_name=EMBED_MODEL)
+Settings.embed_model = HuggingFaceEmbedding(model_name=EMBED_MODEL)
 
 chroma_client = chromadb.PersistentClient(path=DB_PATH)
 chroma_collection = chroma_client.get_or_create_collection("lugares_turisticos")
