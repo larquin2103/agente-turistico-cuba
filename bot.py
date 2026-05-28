@@ -342,10 +342,20 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except httpx.TimeoutException:
         stop_typing.set()
         await update.message.reply_text(
-            "⏳ La consulta tardó demasiado. El modelo LLM puede estar ocupado.\n"
-            "Por favor intenta de nuevo."
+            "⏳ La consulta tardó demasiado. Por favor intenta de nuevo."
         )
         logging.error("Timeout en responder")
+    except httpx.HTTPStatusError as e:
+        stop_typing.set()
+        detalle = ""
+        try:
+            detalle = e.response.json().get("detail", "")
+        except Exception:
+            pass
+        logging.error(f"Error API {e.response.status_code}: {detalle}")
+        await update.message.reply_text(
+            "Lo siento, ocurrió un error en el servidor. Por favor intenta de nuevo."
+        )
     except Exception as e:
         stop_typing.set()
         await update.message.reply_text(
