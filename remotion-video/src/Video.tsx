@@ -1,4 +1,10 @@
-import { AbsoluteFill, Series, useVideoConfig } from "remotion";
+import {
+  AbsoluteFill,
+  Audio,
+  Series,
+  staticFile,
+  useVideoConfig,
+} from "remotion";
 import { scenes, FPS } from "./data/scenes";
 import { SceneRenderer } from "./components/SceneRenderer";
 import { ProgressBar } from "./components/ProgressBar";
@@ -16,14 +22,18 @@ export const PromoVideo: React.FC<{ orientation: Orientation }> = ({
   return (
     <AbsoluteFill style={{ background: "#050505", overflow: "hidden" }}>
       <Series>
-        {scenes.map((scene) => (
-          <Series.Sequence
-            key={scene.id}
-            durationInFrames={scene.duration * FPS}
-          >
-            <SceneRenderer scene={scene} orientation={orientation} />
-          </Series.Sequence>
-        ))}
+        {scenes.map((scene) => {
+          const audioName = `voz-${String(scene.id).padStart(2, "0")}.wav`;
+          return (
+            <Series.Sequence
+              key={scene.id}
+              durationInFrames={scene.duration * FPS}
+            >
+              <SceneRenderer scene={scene} orientation={orientation} />
+              <Audio src={staticFile(`audio/${audioName}`)} volume={1} />
+            </Series.Sequence>
+          );
+        })}
       </Series>
 
       <ProgressBar

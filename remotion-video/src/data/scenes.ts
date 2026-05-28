@@ -76,7 +76,7 @@ const rawScenes: RawScene[] = [
     id: 3,
     act: "SOLUCION",
     actLabel: "SOLUCIÓN",
-    duration: 12,
+    duration: 14,
     title: "Una herramienta para la transformación digital",
     visual:
       "Transición a azul brillante. Logo del producto. WhatsApp y Telegram abiertos. Respuesta instantánea en 2 segundos.",
