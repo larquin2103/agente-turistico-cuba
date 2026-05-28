@@ -41,9 +41,17 @@ ultimos_lugares = {}
 callback_store: dict = {}
 
 def guardar_callback(formato: str, nombres: list) -> str:
-    """Guarda nombres en memoria y devuelve clave ≤8 chars para callback_data."""
+    """Guarda nombres de lugares de BD y devuelve clave ≤8 chars para callback_data."""
     key = hashlib.md5(f"{formato}{'|'.join(nombres)}".encode()).hexdigest()[:8]
-    callback_store[key] = {"formato": formato, "nombres": nombres}
+    callback_store[key] = {"tipo": "db", "formato": formato, "nombres": nombres}
+    return key
+
+
+def guardar_callback_externo(formato: str, lugares: list) -> str:
+    """Guarda lugares externos (con coordenadas) y devuelve clave ≤8 chars."""
+    nombres_clave = "|".join(l.get("nombre", "") for l in lugares)
+    key = hashlib.md5(f"ext_{formato}{nombres_clave}".encode()).hexdigest()[:8]
+    callback_store[key] = {"tipo": "externo", "formato": formato, "lugares": lugares}
     return key
 
 # ──────────────────────────────────────────────────────────
@@ -136,6 +144,99 @@ def _meta_a_dict(meta: dict, doc: str, nombre: str) -> dict:
         "horario":   extraer_campo_texto(doc, "Horario"),
         "categoria": extraer_campo_texto(doc, "Categoría de búsqueda"),
     }
+
+
+TIPO_LABELS = {
+    "restaurant": "Restaurante", "cafe": "Cafetería", "bar": "Bar",
+    "pub": "Bar", "fast_food": "Comida rápida", "museum": "Museo",
+    "hotel": "Hotel", "hostel": "Hostal", "guest_house": "Casa huésped",
+    "attraction": "Atracción turística", "viewpoint": "Mirador",
+    "gallery": "Galería de arte", "theatre": "Teatro", "cinema": "Cine",
+    "pharmacy": "Farmacia", "bank": "Banco",
+    "information": "Información turística", "monument": "Monumento",
+    "ruins": "Ruinas", "castle": "Fortaleza", "church": "Iglesia",
+    "place_of_worship": "Lugar de culto", "memorial": "Memorial",
+}
+
+
+async def mostrar_resultados_externos(update: Update, lat: float, lng: float):
+    """Busca en OpenStreetMap (Overpass) cuando no hay datos locales."""
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            resp = await client.post(
+                f"{API_URL}/buscar_externo",
+                json={"lat": lat, "lng": lng, "radio_m": 1000},
+                headers={"x-api-key": API_KEY}
+            )
+
+        if resp.status_code != 200:
+            await update.message.reply_text(
+                "🔍 La búsqueda externa no está disponible en este momento.\n"
+                f"📍 Explora el área en Google Maps:\n"
+                f"https://maps.google.com/?q={lat},{lng}"
+            )
+            return
+
+        data     = resp.json()
+        lugares  = data.get("lugares", [])
+
+        if not lugares:
+            await update.message.reply_text(
+                "🔍 No encontré lugares registrados en un radio de 1 km.\n"
+                f"📍 Explora la zona en Google Maps:\n"
+                f"https://maps.google.com/?q={lat},{lng}"
+            )
+            return
+
+        lineas = [
+            "🔍 *Resultados de búsqueda en internet (OpenStreetMap):*\n",
+            "_Estos resultados provienen de datos públicos de OpenStreetMap._\n"
+        ]
+
+        for i, lugar in enumerate(lugares[:8], 1):
+            tipo   = TIPO_LABELS.get(lugar.get("tipo", ""), lugar.get("tipo", "Lugar"))
+            dist   = lugar.get("distancia", 0)
+            dist_t = f"{int(dist * 1000)} m" if dist < 1 else f"{dist:.1f} km"
+
+            lineas.append(f"*{i}. {lugar['nombre']}* ({tipo}) — 🚶 {dist_t}")
+            if lugar.get("direccion"):
+                lineas.append(f"   📍 {lugar['direccion']}")
+            if lugar.get("telefono"):
+                lineas.append(f"   📞 {lugar['telefono']}")
+            if lugar.get("horario"):
+                lineas.append(f"   🕐 {lugar['horario']}")
+            if lugar.get("website"):
+                lineas.append(f"   🌐 {lugar['website']}")
+            lineas.append("")
+
+        await update.message.reply_text("\n".join(lineas), parse_mode="Markdown")
+
+        teclado = InlineKeyboardMarkup([[
+            InlineKeyboardButton(
+                f"🗺️ KML ({len(lugares)} lugares)",
+                callback_data=f"map|{guardar_callback_externo('kml', lugares)}"
+            ),
+            InlineKeyboardButton(
+                f"📍 GPX ({len(lugares)} lugares)",
+                callback_data=f"map|{guardar_callback_externo('gpx', lugares)}"
+            )
+        ]])
+        await update.message.reply_text(
+            "¿Quieres descargar el mapa de estos lugares para navegar sin internet?",
+            reply_markup=teclado
+        )
+
+    except httpx.TimeoutException:
+        await update.message.reply_text(
+            "⏳ La búsqueda externa tardó demasiado.\n"
+            f"📍 Puedes explorar la zona en: https://maps.google.com/?q={lat},{lng}"
+        )
+    except Exception as e:
+        logging.error(f"Error en búsqueda externa: {e}")
+        await update.message.reply_text(
+            "🔍 No pude completar la búsqueda externa.\n"
+            f"📍 Explora el área en: https://maps.google.com/?q={lat},{lng}"
+        )
 
 
 async def keep_typing(chat_id: int, bot, stop_event: asyncio.Event):
@@ -247,20 +348,20 @@ async def manejar_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
             response.raise_for_status()
             data = response.json()
 
-        lugares = data.get("lugares", [])
-        await update.message.reply_text(data["respuesta"], parse_mode="Markdown")
+        lugares    = data.get("lugares", [])
+        tiene_datos = data.get("tiene_datos", bool(lugares))
 
-        if lugares:
+        if tiene_datos:
+            await update.message.reply_text(data["respuesta"], parse_mode="Markdown")
             await enviar_tarjeta_lugar(update, lugares[0])
-
             nombres = [l["nombre"] for l in lugares]
             teclado = InlineKeyboardMarkup([
                 [InlineKeyboardButton(
-                    "🗺️ Mapa KML con los 3 lugares",
+                    f"🗺️ KML ({len(nombres)} lugares)",
                     callback_data=f"map|{guardar_callback('kml', nombres)}"
                 )],
                 [InlineKeyboardButton(
-                    "📍 Mapa GPX con los 3 lugares",
+                    f"📍 GPX ({len(nombres)} lugares)",
                     callback_data=f"map|{guardar_callback('gpx', nombres)}"
                 )]
             ])
@@ -268,6 +369,12 @@ async def manejar_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "¿Quieres el mapa para navegar sin internet?",
                 reply_markup=teclado
             )
+        else:
+            await update.message.reply_text(
+                "📭 No tengo datos de tu zona en mi base de datos.\n"
+                "🔍 Buscando lugares cercanos en internet..."
+            )
+            await mostrar_resultados_externos(update, lat, lng)
 
     except httpx.ConnectError:
         await update.message.reply_text(
@@ -321,19 +428,22 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 data = response.json()
 
             stop_typing.set()
-            lugares = data.get("lugares", [])
-            await update.message.reply_text(data["respuesta"], parse_mode="Markdown")
+            lugares     = data.get("lugares", [])
+            tiene_datos = data.get("tiene_datos", bool(lugares))
+            lat_ctx = context.user_data.get("lat")
+            lng_ctx = context.user_data.get("lng")
 
-            if lugares:
+            if tiene_datos:
+                await update.message.reply_text(data["respuesta"], parse_mode="Markdown")
                 await enviar_tarjeta_lugar(update, lugares[0])
                 nombres = [l["nombre"] for l in lugares]
                 teclado = InlineKeyboardMarkup([
                     [InlineKeyboardButton(
-                        "🗺️ Mapa KML",
+                        f"🗺️ KML ({len(nombres)} lugares)",
                         callback_data=f"map|{guardar_callback('kml', nombres)}"
                     )],
                     [InlineKeyboardButton(
-                        "📍 Mapa GPX",
+                        f"📍 GPX ({len(nombres)} lugares)",
                         callback_data=f"map|{guardar_callback('gpx', nombres)}"
                     )]
                 ])
@@ -341,6 +451,18 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "¿Quieres el mapa para navegar sin internet?",
                     reply_markup=teclado
                 )
+            else:
+                await update.message.reply_text(
+                    "📭 No tengo datos de esa zona en mi base de datos.\n"
+                    "🔍 Buscando en internet..."
+                )
+                if lat_ctx and lng_ctx:
+                    await mostrar_resultados_externos(update, lat_ctx, lng_ctx)
+                else:
+                    await update.message.reply_text(
+                        "Para buscar en internet comparte tu ubicación GPS "
+                        "con el botón 📎 → Ubicación."
+                    )
 
         else:
             # Flujo RAG con historial de conversación
@@ -371,39 +493,25 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await enviar_tarjeta_lugar(update, lugar_datos)
                 # Si hay más de un lugar mencionado, ofrecer mapa combinado
                 if len(nombres_lugares) > 1:
-                    teclado = InlineKeyboardMarkup([[
-                        InlineKeyboardButton(
-                            f"🗺️ KML ({len(nombres_lugares)} lugares)",
-                            callback_data=f"map|{guardar_callback('kml', nombres_lugares)}"
-                        ),
-                        InlineKeyboardButton(
-                            f"📍 GPX ({len(nombres_lugares)} lugares)",
-                            callback_data=f"map|{guardar_callback('gpx', nombres_lugares)}"
+                    lugares_con_datos = [
+                        n for n in nombres_lugares if buscar_datos_lugar(n)
+                    ]
+                    if len(lugares_con_datos) > 1:
+                        teclado = InlineKeyboardMarkup([[
+                            InlineKeyboardButton(
+                                f"🗺️ KML ({len(lugares_con_datos)} lugares)",
+                                callback_data=f"map|{guardar_callback('kml', lugares_con_datos)}"
+                            ),
+                            InlineKeyboardButton(
+                                f"📍 GPX ({len(lugares_con_datos)} lugares)",
+                                callback_data=f"map|{guardar_callback('gpx', lugares_con_datos)}"
+                            )
+                        ]])
+                        await update.message.reply_text(
+                            f"🗺️ ¿Quieres un mapa con los *{len(lugares_con_datos)} lugares* mencionados?",
+                            parse_mode="Markdown",
+                            reply_markup=teclado
                         )
-                    ]])
-                    await update.message.reply_text(
-                        f"🗺️ ¿Quieres un mapa con los *{len(nombres_lugares)} lugares* mencionados?",
-                        parse_mode="Markdown",
-                        reply_markup=teclado
-                    )
-            elif nombres_lugares:
-                # No hay datos en BD pero sí se detectaron nombres → mostrar botones de mapa
-                label = nombre_lugar if len(nombres_lugares) == 1 else f"{len(nombres_lugares)} lugares"
-                teclado = InlineKeyboardMarkup([[
-                    InlineKeyboardButton(
-                        "🗺️ KML",
-                        callback_data=f"map|{guardar_callback('kml', nombres_lugares)}"
-                    ),
-                    InlineKeyboardButton(
-                        "📍 GPX",
-                        callback_data=f"map|{guardar_callback('gpx', nombres_lugares)}"
-                    )
-                ]])
-                await update.message.reply_text(
-                    f"📍 ¿Quieres el mapa de *{label}* para navegar sin internet?",
-                    parse_mode="Markdown",
-                    reply_markup=teclado
-                )
 
     except httpx.ConnectError:
         stop_typing.set()
@@ -484,76 +592,109 @@ async def manejar_botones(update: Update, context: ContextTypes.DEFAULT_TYPE):
     usuario_id = str(query.from_user.id)
     datos      = query.data.split("|", 1)
 
-    # Formato nuevo: "map|<clave>"
+    # Formato: "map|<clave>"
     if datos[0] == "map" and len(datos) > 1:
         stored = callback_store.get(datos[1], {})
         formato_real = stored.get("formato", "kml")
-        nombres      = stored.get("nombres", [])
+        tipo_callback = stored.get("tipo", "db")
     else:
-        # Compatibilidad con botones anteriores (por si acaso)
-        formato_real = "kml" if "kml" in datos[0] else "gpx"
-        nombres      = [datos[1]] if len(datos) > 1 else [ultimos_lugares.get(usuario_id, "")]
+        # Compatibilidad con botones anteriores
+        formato_real  = "kml" if "kml" in datos[0] else "gpx"
+        tipo_callback = "db"
+        stored        = {"nombres": [datos[1]] if len(datos) > 1 else [ultimos_lugares.get(usuario_id, "")]}
 
-    nombres = [n.strip() for n in nombres if n.strip()]
-
-    if not nombres:
-        await query.message.reply_text("No pude identificar el lugar. Pregunta de nuevo.")
-        return
-
-    label = nombres[0] if len(nombres) == 1 else f"{len(nombres)} lugares"
-    await query.message.reply_text(
-        f"⏳ Generando {formato_real.upper()} para *{label}*...",
-        parse_mode="Markdown"
+    instrucciones = (
+        "📱 *Cómo usar en OsmAnd:*\n"
+        "1. Descarga el archivo\n"
+        "2. Abre OsmAnd\n"
+        "3. Menú → Mis lugares → Importar\n"
+        "4. Selecciona el archivo\n"
+        "5. ¡Navega sin internet! 🗺️"
     )
 
     try:
-        # Intentar cada nombre hasta obtener un mapa válido
-        response_ok = None
-        nombre_exitoso = None
-        async with httpx.AsyncClient(timeout=30) as client:
-            for nombre_candidato in nombres:
-                resp = await client.post(
-                    f"{API_URL}/mapa/{formato_real}",
-                    json={"place_id": "", "nombre": nombre_candidato},
-                    headers={"x-api-key": API_KEY}
-                )
-                if resp.status_code == 200:
-                    response_ok = resp
-                    nombre_exitoso = nombre_candidato
-                    break
+        if tipo_callback == "externo":
+            lugares_ext = stored.get("lugares", [])
+            if not lugares_ext:
+                await query.message.reply_text("No hay datos para generar el mapa.")
+                return
 
-        if response_ok:
-            nombre_arch = nombre_exitoso.replace(" ", "_")[:30]
-            ruta_temp   = f"{nombre_arch}.{formato_real}"
-
-            with open(ruta_temp, "wb") as f:
-                f.write(response_ok.content)
-
-            instrucciones = (
-                "📱 *Cómo usar en OsmAnd:*\n"
-                "1. Descarga el archivo\n"
-                "2. Abre OsmAnd\n"
-                "3. Menú → Mis lugares → Importar\n"
-                "4. Selecciona el archivo\n"
-                "5. ¡Navega sin internet! 🗺️"
-            )
-
-            with open(ruta_temp, "rb") as f:
-                await query.message.reply_document(
-                    document=f,
-                    filename=f"{nombre_arch}.{formato_real}",
-                    caption=instrucciones,
-                    parse_mode="Markdown"
-                )
-
-            os.remove(ruta_temp)
-
-        else:
+            label = f"{len(lugares_ext)} lugares"
             await query.message.reply_text(
-                f"No encontré coordenadas GPS para *{label}*.\n"
-                "Este lugar puede no tener datos de ubicación en nuestra base de datos.",
+                f"⏳ Generando {formato_real.upper()} para *{label}*...",
                 parse_mode="Markdown"
             )
+
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.post(
+                    f"{API_URL}/mapa/{formato_real}_externo",
+                    json={"lugares": lugares_ext},
+                    headers={"x-api-key": API_KEY}
+                )
+
+            if resp.status_code == 200:
+                ruta_temp = f"lugares_externos.{formato_real}"
+                with open(ruta_temp, "wb") as f:
+                    f.write(resp.content)
+                with open(ruta_temp, "rb") as f:
+                    await query.message.reply_document(
+                        document=f,
+                        filename=f"lugares_cercanos.{formato_real}",
+                        caption=instrucciones,
+                        parse_mode="Markdown"
+                    )
+                os.remove(ruta_temp)
+            else:
+                await query.message.reply_text("Error generando el mapa externo. Intenta de nuevo.")
+
+        else:
+            # Flujo DB: buscar por nombre en ChromaDB
+            nombres = stored.get("nombres", [])
+            nombres = [n.strip() for n in nombres if n.strip()]
+
+            if not nombres:
+                await query.message.reply_text("No pude identificar el lugar. Pregunta de nuevo.")
+                return
+
+            label = nombres[0] if len(nombres) == 1 else f"{len(nombres)} lugares"
+            await query.message.reply_text(
+                f"⏳ Generando {formato_real.upper()} para *{label}*...",
+                parse_mode="Markdown"
+            )
+
+            response_ok    = None
+            nombre_exitoso = None
+            async with httpx.AsyncClient(timeout=30) as client:
+                for nombre_candidato in nombres:
+                    resp = await client.post(
+                        f"{API_URL}/mapa/{formato_real}",
+                        json={"place_id": "", "nombre": nombre_candidato},
+                        headers={"x-api-key": API_KEY}
+                    )
+                    if resp.status_code == 200:
+                        response_ok    = resp
+                        nombre_exitoso = nombre_candidato
+                        break
+
+            if response_ok:
+                nombre_arch = nombre_exitoso.replace(" ", "_")[:30]
+                ruta_temp   = f"{nombre_arch}.{formato_real}"
+                with open(ruta_temp, "wb") as f:
+                    f.write(response_ok.content)
+                with open(ruta_temp, "rb") as f:
+                    await query.message.reply_document(
+                        document=f,
+                        filename=f"{nombre_arch}.{formato_real}",
+                        caption=instrucciones,
+                        parse_mode="Markdown"
+                    )
+                os.remove(ruta_temp)
+            else:
+                await query.message.reply_text(
+                    f"No encontré coordenadas GPS para *{label}*.\n"
+                    "Este lugar puede no tener datos de ubicación en nuestra base de datos.",
+                    parse_mode="Markdown"
+                )
 
     except Exception as e:
         await query.message.reply_text("Error generando el archivo. Intenta de nuevo.")

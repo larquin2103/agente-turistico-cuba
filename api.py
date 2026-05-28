@@ -2,6 +2,7 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
 import chromadb
+import httpx
 import os
 from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Settings, StorageContext
@@ -86,6 +87,24 @@ class SolicitudCercania(BaseModel):
     lng: float = None
     texto_ubicacion: str = None
     usuario_id: str = "anonimo"
+
+class SolicitudBusquedaExterna(BaseModel):
+    lat: float
+    lng: float
+    radio_m: int = 1000
+
+class LugarExterno(BaseModel):
+    nombre: str
+    lat: float
+    lng: float
+    tipo: str = ""
+    direccion: str = ""
+    telefono: str = ""
+    horario: str = ""
+    website: str = ""
+
+class SolicitudMapaExterno(BaseModel):
+    lugares: list[LugarExterno]
 
 
 @app.get("/")
@@ -230,8 +249,135 @@ def lugares_cercanos_endpoint(solicitud: SolicitudCercania, x_api_key: str = Hea
             top_n=3
         )
 
+        DISTANCIA_MAX_KM = 50
+        lugares_proximos = [l for l in lugares if l.get("distancia", 999) <= DISTANCIA_MAX_KM]
         respuesta = formatear_respuesta_cercania(lugares)
-        return {"respuesta": respuesta, "lugares": lugares}
+        return {
+            "respuesta": respuesta,
+            "lugares": lugares,
+            "tiene_datos": bool(lugares_proximos)
+        }
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/buscar_externo")
+def buscar_externo(solicitud: SolicitudBusquedaExterna, x_api_key: str = Header(...)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="API key inválida")
+
+    query = (
+        f"[out:json][timeout:10];"
+        f"("
+        f'node["amenity"~"restaurant|cafe|bar|pub|fast_food|museum|hotel|hostel|guest_house|theatre|cinema|pharmacy|bank"]'
+        f"(around:{solicitud.radio_m},{solicitud.lat},{solicitud.lng});"
+        f'node["tourism"~"hotel|hostel|museum|attraction|viewpoint|gallery|information|apartment"]'
+        f"(around:{solicitud.radio_m},{solicitud.lat},{solicitud.lng});"
+        f'node["historic"]'
+        f"(around:{solicitud.radio_m},{solicitud.lat},{solicitud.lng});"
+        f");"
+        f"out body;"
+    )
+
+    try:
+        with httpx.Client(timeout=15) as client:
+            resp = client.get(
+                "https://overpass-api.de/api/interpreter",
+                params={"data": query}
+            )
+            resp.raise_for_status()
+
+        from ubicacion import haversine
+
+        lugares = []
+        for elem in resp.json().get("elements", []):
+            tags = elem.get("tags", {})
+            name = (tags.get("name") or tags.get("name:es") or
+                    tags.get("name:en") or tags.get("name:fr"))
+            if not name:
+                continue
+
+            dist = haversine(solicitud.lat, solicitud.lng, elem["lat"], elem["lon"])
+            tipo = (tags.get("amenity") or tags.get("tourism") or
+                    tags.get("historic") or "lugar")
+
+            calle     = tags.get("addr:street", "")
+            numero    = tags.get("addr:housenumber", "")
+            direccion = f"{calle} {numero}".strip() if calle else ""
+
+            lugares.append({
+                "nombre":    name,
+                "tipo":      tipo,
+                "lat":       elem["lat"],
+                "lng":       elem["lon"],
+                "distancia": round(dist, 3),
+                "direccion": direccion,
+                "telefono":  tags.get("phone", tags.get("contact:phone", "")),
+                "horario":   tags.get("opening_hours", ""),
+                "website":   tags.get("website", tags.get("contact:website", "")),
+            })
+
+        lugares.sort(key=lambda x: x["distancia"])
+        return {"lugares": lugares[:10], "fuente": "OpenStreetMap", "total": len(lugares)}
+
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=503, detail="Timeout en búsqueda externa")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/mapa/kml_externo")
+def descargar_kml_externo(solicitud: SolicitudMapaExterno, x_api_key: str = Header(...)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="API key inválida")
+    try:
+        datos = [
+            {
+                "nombre":    l.nombre,
+                "lat":       l.lat,
+                "lng":       l.lng,
+                "categoria": l.tipo,
+                "direccion": l.direccion,
+                "telefono":  l.telefono,
+                "horario":   l.horario,
+                "website":   l.website,
+            }
+            for l in solicitud.lugares
+        ]
+        kml = generar_kml(datos)
+        return Response(
+            content=kml,
+            media_type="application/vnd.google-earth.kml+xml",
+            headers={"Content-Disposition": "attachment; filename=lugares_cercanos.kml"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/mapa/gpx_externo")
+def descargar_gpx_externo(solicitud: SolicitudMapaExterno, x_api_key: str = Header(...)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="API key inválida")
+    try:
+        datos = [
+            {
+                "nombre":    l.nombre,
+                "lat":       l.lat,
+                "lng":       l.lng,
+                "categoria": l.tipo,
+                "direccion": l.direccion,
+                "telefono":  l.telefono,
+                "horario":   l.horario,
+                "website":   l.website,
+            }
+            for l in solicitud.lugares
+        ]
+        gpx = generar_gpx(datos)
+        return Response(
+            content=gpx,
+            media_type="application/gpx+xml",
+            headers={"Content-Disposition": "attachment; filename=lugares_cercanos.gpx"}
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

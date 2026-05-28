@@ -105,12 +105,17 @@ def formatear_respuesta_cercania(lugares: list, distancia_max_km: float = 50) ->
     if not lugares:
         return "No encontré lugares con coordenadas GPS en mi base de datos."
 
-    lineas = ["📍 *Los 3 lugares más cercanos a tu ubicación:*\n"]
+    lugares_filtrados = [l for l in lugares if l["distancia"] <= distancia_max_km]
 
-    for i, lugar in enumerate(lugares, 1):
-        if lugar["distancia"] > distancia_max_km:
-            continue
+    if not lugares_filtrados:
+        return (
+            f"Los lugares más cercanos en mi base de datos están a más de "
+            f"{distancia_max_km} km de tu ubicación. No tengo datos para esta zona."
+        )
 
+    lineas = ["📍 *Los lugares más cercanos a tu ubicación:*\n"]
+
+    for i, lugar in enumerate(lugares_filtrados, 1):
         dist = lugar["distancia"]
         if dist < 1:
             dist_texto = f"{int(dist * 1000)} metros"
