@@ -2,6 +2,7 @@ import logging
 import re
 import os
 import asyncio
+import hashlib
 import httpx
 from dotenv import load_dotenv
 
@@ -34,6 +35,16 @@ logging.basicConfig(level=logging.INFO)
 
 # Almacena el último lugar mencionado por usuario {usuario_id: nombre_lugar}
 ultimos_lugares = {}
+
+# Almacén de callbacks — evita superar el límite de 64 bytes de Telegram
+# {clave_corta: {"formato": "kml"/"gpx", "nombres": [...]}}
+callback_store: dict = {}
+
+def guardar_callback(formato: str, nombres: list) -> str:
+    """Guarda nombres en memoria y devuelve clave ≤8 chars para callback_data."""
+    key = hashlib.md5(f"{formato}{'|'.join(nombres)}".encode()).hexdigest()[:8]
+    callback_store[key] = {"formato": formato, "nombres": nombres}
+    return key
 
 # ──────────────────────────────────────────────────────────
 # UTILIDADES
@@ -206,14 +217,15 @@ async def manejar_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if lugares:
             await enviar_tarjeta_lugar(update, lugares[0])
 
+            nombres = [l["nombre"] for l in lugares]
             teclado = InlineKeyboardMarkup([
                 [InlineKeyboardButton(
                     "🗺️ Mapa KML con los 3 lugares",
-                    callback_data=f"kml_multi|{','.join([l['nombre'] for l in lugares])}"
+                    callback_data=f"map|{guardar_callback('kml', nombres)}"
                 )],
                 [InlineKeyboardButton(
                     "📍 Mapa GPX con los 3 lugares",
-                    callback_data=f"gpx_multi|{','.join([l['nombre'] for l in lugares])}"
+                    callback_data=f"map|{guardar_callback('gpx', nombres)}"
                 )]
             ])
             await update.message.reply_text(
@@ -278,14 +290,15 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             if lugares:
                 await enviar_tarjeta_lugar(update, lugares[0])
+                nombres = [l["nombre"] for l in lugares]
                 teclado = InlineKeyboardMarkup([
                     [InlineKeyboardButton(
                         "🗺️ Mapa KML",
-                        callback_data=f"kml_multi|{','.join([l['nombre'] for l in lugares])}"
+                        callback_data=f"map|{guardar_callback('kml', nombres)}"
                     )],
                     [InlineKeyboardButton(
                         "📍 Mapa GPX",
-                        callback_data=f"gpx_multi|{','.join([l['nombre'] for l in lugares])}"
+                        callback_data=f"map|{guardar_callback('gpx', nombres)}"
                     )]
                 ])
                 await update.message.reply_text(
@@ -358,8 +371,8 @@ async def enviar_tarjeta_lugar(update: Update, lugar: dict):
     if website:
         botones.append([InlineKeyboardButton("🌐 Sitio web oficial", url=website)])
     botones.append([
-        InlineKeyboardButton("🗺️ KML", callback_data=f"kml|{nombre}"),
-        InlineKeyboardButton("📍 GPX", callback_data=f"gpx|{nombre}")
+        InlineKeyboardButton("🗺️ KML", callback_data=f"map|{guardar_callback('kml', [nombre])}"),
+        InlineKeyboardButton("📍 GPX", callback_data=f"map|{guardar_callback('gpx', [nombre])}")
     ])
 
     teclado = InlineKeyboardMarkup(botones)
@@ -381,19 +394,24 @@ async def enviar_tarjeta_lugar(update: Update, lugar: dict):
 
 
 async def manejar_botones(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Maneja todos los botones inline — KML, GPX, kml_multi, gpx_multi."""
+    """Maneja todos los botones inline — usa callback_store para evitar límite de 64 bytes."""
     query      = update.callback_query
     await query.answer()
 
     usuario_id = str(query.from_user.id)
     datos      = query.data.split("|", 1)
-    formato    = datos[0]   # kml / gpx / kml_multi / gpx_multi
-    contenido  = datos[1] if len(datos) > 1 else ""
 
-    es_multi      = "multi" in formato
-    formato_real  = "kml" if "kml" in formato else "gpx"
-    nombres       = contenido.split(",") if es_multi else [contenido or ultimos_lugares.get(usuario_id, "")]
-    nombres       = [n.strip() for n in nombres if n.strip()]
+    # Formato nuevo: "map|<clave>"
+    if datos[0] == "map" and len(datos) > 1:
+        stored = callback_store.get(datos[1], {})
+        formato_real = stored.get("formato", "kml")
+        nombres      = stored.get("nombres", [])
+    else:
+        # Compatibilidad con botones anteriores (por si acaso)
+        formato_real = "kml" if "kml" in datos[0] else "gpx"
+        nombres      = [datos[1]] if len(datos) > 1 else [ultimos_lugares.get(usuario_id, "")]
+
+    nombres = [n.strip() for n in nombres if n.strip()]
 
     if not nombres:
         await query.message.reply_text("No pude identificar el lugar. Pregunta de nuevo.")
