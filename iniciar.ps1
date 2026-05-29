@@ -141,26 +141,23 @@ Write-Host "         (puede tardar ~15 s la primera vez)" -ForegroundColor Gray
 $lista    = $false
 $intentos = 0
 
-# HttpClient con proxy desactivado: unica forma fiable de bypassear el VPN en PowerShell
-$handler            = New-Object System.Net.Http.HttpClientHandler
-$handler.UseProxy   = $false
-$httpClient         = New-Object System.Net.Http.HttpClient($handler)
-$httpClient.Timeout = [System.TimeSpan]::FromSeconds(3)
-
 while (-not $lista -and $intentos -lt 60) {
     Start-Sleep -Seconds 3
     $intentos++
     try {
-        $tarea = $httpClient.GetAsync("http://localhost:8000/")
-        if ($tarea.Wait(3000) -and $tarea.Result.IsSuccessStatusCode) {
-            $lista = $true
-        }
-    } catch {}
+        # WebClient con Proxy=null: disponible en PS 5.1+, bypasea el proxy del VPN
+        $wc = New-Object System.Net.WebClient
+        $wc.Proxy = $null
+        $null = $wc.DownloadString("http://localhost:8000/")
+        $lista = $true
+        $wc.Dispose()
+    } catch {
+        if ($wc) { try { $wc.Dispose() } catch {} }
+    }
     if (-not $lista -and ($intentos % 4 -eq 0)) {
         Write-Host "         Aun esperando... ($($intentos * 3)s)" -ForegroundColor Gray
     }
 }
-$httpClient.Dispose()
 
 if ($lista) {
     Write-Host "[API]    Lista!" -ForegroundColor Green
