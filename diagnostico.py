@@ -2,24 +2,20 @@ import chromadb
 import os
 from dotenv import load_dotenv
 from llama_index.core import Settings
-from llama_index.embeddings.ollama import OllamaEmbedding
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 load_dotenv()
 
-DB_PATH    = os.getenv("DB_PATH", "./db")
-OLLAMA_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+DB_PATH     = os.getenv("DB_PATH", "./db")
+EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 
-Settings.embed_model = OllamaEmbedding(
-    model_name="nomic-embed-text",
-    base_url=OLLAMA_URL
-)
+Settings.embed_model = HuggingFaceEmbedding(model_name=EMBED_MODEL)
 
 client = chromadb.PersistentClient(path=DB_PATH)
 col = client.get_or_create_collection("lugares_turisticos")
 
 print(f"Total documentos: {col.count()}\n")
 
-# Ver todos los documentos con su categoría
 todos = col.get()
 categorias = {}
 for doc in todos["documents"]:

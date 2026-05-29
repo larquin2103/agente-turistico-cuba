@@ -3,26 +3,16 @@ import os
 import chromadb
 from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Document, Settings, StorageContext
-from llama_index.llms.ollama import Ollama
-from llama_index.embeddings.ollama import OllamaEmbedding
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 
 load_dotenv()
 
-DB_PATH      = os.getenv("DB_PATH", "./db")
-OLLAMA_URL   = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+DB_PATH     = os.getenv("DB_PATH", "./db")
+EMBED_MODEL = os.getenv("EMBED_MODEL", "BAAI/bge-small-en-v1.5")
 
-Settings.llm = Ollama(
-    model=OLLAMA_MODEL,
-    base_url=OLLAMA_URL,
-    request_timeout=120.0,
-    system_prompt="Eres un agente turístico experto en Cuba. Responde SIEMPRE en español. Usa únicamente la información del contexto proporcionado para responder."
-)
-Settings.embed_model = OllamaEmbedding(
-    model_name="nomic-embed-text",
-    base_url=OLLAMA_URL
-)
+# Solo necesitamos embeddings para indexar (el LLM no se usa aquí)
+Settings.embed_model = HuggingFaceEmbedding(model_name=EMBED_MODEL)
 
 chroma_client = chromadb.PersistentClient(path=DB_PATH)
 chroma_collection = chroma_client.get_or_create_collection("lugares_turisticos")
