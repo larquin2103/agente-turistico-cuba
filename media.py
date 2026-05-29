@@ -17,14 +17,13 @@ UNSPLASH_FALLBACK_CUBA = {
 async def obtener_imagen(thumbnail: str, nombre: str, categoria: str = "") -> str:
     """
     Estrategia en cascada:
-    1. Thumbnail del JSON (Google Maps)
+    1. Thumbnail del JSON (Google Maps) — se usa directo, Telegram valida
     2. Búsqueda en Wikipedia
     3. Imagen genérica por categoría (Unsplash)
     """
     if thumbnail and thumbnail.startswith("http"):
-        if await verificar_url(thumbnail):
-            logging.info(f"Imagen desde JSON: {nombre}")
-            return thumbnail
+        logging.info(f"Imagen desde JSON: {nombre}")
+        return thumbnail
 
     imagen_wiki = await buscar_wikipedia(nombre)
     if imagen_wiki:
@@ -37,16 +36,6 @@ async def obtener_imagen(thumbnail: str, nombre: str, categoria: str = "") -> st
             return url
 
     return UNSPLASH_FALLBACK_CUBA["default"]
-
-
-async def verificar_url(url: str) -> bool:
-    """Verifica que la URL de imagen responde correctamente."""
-    try:
-        async with httpx.AsyncClient(timeout=5) as client:
-            resp = await client.head(url, follow_redirects=True)
-            return resp.status_code == 200
-    except Exception:
-        return False
 
 
 async def buscar_wikipedia(nombre: str) -> str:
