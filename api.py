@@ -1,9 +1,14 @@
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel
+import asyncio
 import chromadb
 import httpx
+import logging
 import os
+import re
 from dotenv import load_dotenv
 from llama_index.core import VectorStoreIndex, Settings, StorageContext
 from llama_index.llms.groq import Groq
@@ -13,6 +18,7 @@ from generador_mapas import generar_kml, generar_gpx, extraer_coordenadas, parse
 from ubicacion import lugares_cercanos, texto_a_coordenadas, formatear_respuesta_cercania
 
 load_dotenv()
+logging.basicConfig(level=logging.INFO)
 
 API_KEY     = os.getenv("API_KEY")
 DB_PATH     = os.getenv("DB_PATH", "./db")
@@ -51,14 +57,16 @@ Settings.llm = Groq(
 )
 Settings.embed_model = HuggingFaceEmbedding(model_name=EMBED_MODEL)
 
-chroma_client = chromadb.PersistentClient(path=DB_PATH)
+chroma_client     = chromadb.PersistentClient(path=DB_PATH)
 chroma_collection = chroma_client.get_or_create_collection("lugares_turisticos")
-vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
-storage_context = StorageContext.from_defaults(vector_store=vector_store)
-index = VectorStoreIndex.from_vector_store(vector_store, storage_context=storage_context)
+vector_store      = ChromaVectorStore(chroma_collection=chroma_collection)
+storage_context   = StorageContext.from_defaults(vector_store=vector_store)
+index             = VectorStoreIndex.from_vector_store(vector_store, storage_context=storage_context)
 
-# Motor de chat con historial por usuario
-user_chat_engines: dict = {}
+# Motores de chat por usuario + timestamp de último uso para TTL
+user_chat_engines:     dict = {}
+user_engine_last_used: dict = {}
+
 
 def get_chat_engine(user_id: str):
     if user_id not in user_chat_engines:
@@ -67,9 +75,36 @@ def get_chat_engine(user_id: str):
             verbose=False,
             system_prompt=SYSTEM_PROMPT
         )
+    user_engine_last_used[user_id] = datetime.now()
     return user_chat_engines[user_id]
 
-app = FastAPI(title="Agente Turístico Cuba API")
+
+async def _limpiar_engines_loop():
+    """Elimina motores de chat inactivos por más de 2 h (corre cada 30 min)."""
+    while True:
+        await asyncio.sleep(1800)
+        ahora     = datetime.now()
+        expirados = [
+            uid for uid, ts in list(user_engine_last_used.items())
+            if ahora - ts > timedelta(hours=2)
+        ]
+        for uid in expirados:
+            user_chat_engines.pop(uid, None)
+            user_engine_last_used.pop(uid, None)
+        if expirados:
+            logging.info(f"TTL cleanup: {len(expirados)} chat engines eliminados")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    asyncio.create_task(_limpiar_engines_loop())
+    yield
+
+
+app = FastAPI(title="Agente Turístico Cuba API", lifespan=lifespan)
+
+
+# ── Modelos Pydantic ──────────────────────────────────────────────────────────
 
 class Pregunta(BaseModel):
     texto: str
@@ -106,6 +141,18 @@ class LugarExterno(BaseModel):
 class SolicitudMapaExterno(BaseModel):
     lugares: list[LugarExterno]
 
+class BusquedaLugar(BaseModel):
+    nombre: str
+
+
+# ── Helper interno ────────────────────────────────────────────────────────────
+
+def _extraer_campo(texto: str, campo: str) -> str:
+    m = re.search(rf"{campo}:\s*(.+)", texto)
+    return m.group(1).strip() if m else ""
+
+
+# ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @app.get("/")
 def health():
@@ -114,24 +161,26 @@ def health():
     except Exception:
         total_lugares = -1
     return {
-        "status": "ok",
-        "llm": GROQ_MODEL,
-        "embedding": EMBED_MODEL,
-        "lugares_en_db": total_lugares,
+        "status":          "ok",
+        "llm":             GROQ_MODEL,
+        "embedding":       EMBED_MODEL,
+        "lugares_en_db":   total_lugares,
         "usuarios_activos": len(user_chat_engines)
     }
 
 
 @app.post("/chat")
-def chat(pregunta: Pregunta, x_api_key: str = Header(...)):
+async def chat(pregunta: Pregunta, x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="API key inválida")
     try:
         engine = get_chat_engine(pregunta.usuario_id)
-        respuesta = engine.chat(pregunta.texto)
+        ahora  = datetime.now().strftime("%A %d/%m/%Y %H:%M")
+        texto  = f"[Hora actual: {ahora}]\n{pregunta.texto}"
+        respuesta = await engine.achat(texto)
         return {
-            "pregunta": pregunta.texto,
-            "respuesta": str(respuesta),
+            "pregunta":   pregunta.texto,
+            "respuesta":  str(respuesta),
             "usuario_id": pregunta.usuario_id
         }
     except Exception as e:
@@ -139,39 +188,93 @@ def chat(pregunta: Pregunta, x_api_key: str = Header(...)):
 
 
 @app.post("/reset")
-def reset_chat(solicitud: ResetRequest, x_api_key: str = Header(...)):
+async def reset_chat(solicitud: ResetRequest, x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="API key inválida")
     user_chat_engines.pop(solicitud.usuario_id, None)
+    user_engine_last_used.pop(solicitud.usuario_id, None)
     return {"status": "ok", "mensaje": f"Historial de {solicitud.usuario_id} reiniciado"}
 
 
-@app.post("/mapa/kml")
-def descargar_kml(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
+@app.post("/buscar_lugar")
+async def buscar_lugar_endpoint(solicitud: BusquedaLugar, x_api_key: str = Header(...)):
+    """Busca un lugar: exact match → fuzzy → búsqueda vectorial semántica."""
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="API key inválida")
     try:
-        col = chroma_client.get_or_create_collection("lugares_turisticos")
-        resultados = col.get(where={"title": solicitud.nombre})
+        def _buscar_db():
+            resultado = chroma_collection.get(where={"title": solicitud.nombre})
+            if resultado["documents"]:
+                return resultado["metadatas"][0], resultado["documents"][0]
+            todos        = chroma_collection.get(limit=500)
+            nombre_lower = solicitud.nombre.lower()
+            for i, doc in enumerate(todos["documents"]):
+                if nombre_lower in doc.lower():
+                    return todos["metadatas"][i], doc
+            return None, None
 
-        if not resultados["documents"]:
-            resultados = col.get(limit=100)
-            docs_filtrados = [
-                d for d in resultados["documents"]
-                if solicitud.nombre.lower() in d.lower()
-            ]
-            if not docs_filtrados:
-                raise HTTPException(status_code=404, detail="Lugar no encontrado")
-            texto = docs_filtrados[0]
-        else:
-            texto = resultados["documents"][0]
+        meta, doc = await asyncio.to_thread(_buscar_db)
 
-        datos = parsear_documento(texto)
-        lat, lng = extraer_coordenadas(texto)
+        if meta is None:
+            def _buscar_vectorial():
+                retriever = index.as_retriever(similarity_top_k=1)
+                nodos     = retriever.retrieve(solicitud.nombre)
+                if not nodos:
+                    return None, None
+                nodo = nodos[0]
+                return nodo.metadata, nodo.text
+
+            meta, doc = await asyncio.to_thread(_buscar_vectorial)
+
+        if meta is None or doc is None:
+            raise HTTPException(status_code=404, detail="Lugar no encontrado")
+
+        lat, lng = extraer_coordenadas(doc)
+        return {
+            "nombre":    meta.get("title", solicitud.nombre),
+            "thumbnail": meta.get("thumbnail", ""),
+            "website":   meta.get("website", ""),
+            "lat":       lat,
+            "lng":       lng,
+            "direccion": _extraer_campo(doc, "Dirección"),
+            "telefono":  _extraer_campo(doc, "Teléfono"),
+            "rating":    _extraer_campo(doc, "Calificación"),
+            "horario":   _extraer_campo(doc, "Horario"),
+            "categoria": _extraer_campo(doc, "Categoría de búsqueda"),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/mapa/kml")
+async def descargar_kml(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="API key inválida")
+    try:
+        def _buscar_en_db():
+            col        = chroma_client.get_or_create_collection("lugares_turisticos")
+            resultados = col.get(where={"title": solicitud.nombre})
+            if not resultados["documents"]:
+                resultados     = col.get(limit=100)
+                docs_filtrados = [d for d in resultados["documents"]
+                                  if solicitud.nombre.lower() in d.lower()]
+                if not docs_filtrados:
+                    return None
+                return docs_filtrados[0]
+            return resultados["documents"][0]
+
+        texto = await asyncio.to_thread(_buscar_en_db)
+        if texto is None:
+            raise HTTPException(status_code=404, detail="Lugar no encontrado")
+
+        datos        = parsear_documento(texto)
+        lat, lng     = extraer_coordenadas(texto)
         datos["lat"] = lat
         datos["lng"] = lng
 
-        kml = generar_kml([datos])
+        kml            = generar_kml([datos])
         nombre_archivo = solicitud.nombre.replace(" ", "_")[:30]
         return Response(
             content=kml,
@@ -185,31 +288,32 @@ def descargar_kml(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
 
 
 @app.post("/mapa/gpx")
-def descargar_gpx(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
+async def descargar_gpx(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="API key inválida")
     try:
-        col = chroma_client.get_or_create_collection("lugares_turisticos")
-        resultados = col.get(where={"title": solicitud.nombre})
+        def _buscar_en_db():
+            col        = chroma_client.get_or_create_collection("lugares_turisticos")
+            resultados = col.get(where={"title": solicitud.nombre})
+            if not resultados["documents"]:
+                resultados     = col.get(limit=100)
+                docs_filtrados = [d for d in resultados["documents"]
+                                  if solicitud.nombre.lower() in d.lower()]
+                if not docs_filtrados:
+                    return None
+                return docs_filtrados[0]
+            return resultados["documents"][0]
 
-        if not resultados["documents"]:
-            resultados = col.get(limit=100)
-            docs_filtrados = [
-                d for d in resultados["documents"]
-                if solicitud.nombre.lower() in d.lower()
-            ]
-            if not docs_filtrados:
-                raise HTTPException(status_code=404, detail="Lugar no encontrado")
-            texto = docs_filtrados[0]
-        else:
-            texto = resultados["documents"][0]
+        texto = await asyncio.to_thread(_buscar_en_db)
+        if texto is None:
+            raise HTTPException(status_code=404, detail="Lugar no encontrado")
 
-        datos = parsear_documento(texto)
-        lat, lng = extraer_coordenadas(texto)
+        datos        = parsear_documento(texto)
+        lat, lng     = extraer_coordenadas(texto)
         datos["lat"] = lat
         datos["lng"] = lng
 
-        gpx = generar_gpx([datos])
+        gpx            = generar_gpx([datos])
         nombre_archivo = solicitud.nombre.replace(" ", "_")[:30]
         return Response(
             content=gpx,
@@ -223,7 +327,7 @@ def descargar_gpx(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
 
 
 @app.post("/cercanos")
-def lugares_cercanos_endpoint(solicitud: SolicitudCercania, x_api_key: str = Header(...)):
+async def lugares_cercanos_endpoint(solicitud: SolicitudCercania, x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="API key inválida")
     try:
@@ -239,31 +343,26 @@ def lugares_cercanos_endpoint(solicitud: SolicitudCercania, x_api_key: str = Hea
                     "Comparte tu ubicación GPS con el botón 📎 → Ubicación, "
                     "o escribe el nombre de tu barrio o zona en La Habana."
                 ),
-                "lugares": []
+                "lugares":     [],
+                "tiene_datos": False
             }
 
-        lugares = lugares_cercanos(
-            lat_usuario=lat,
-            lng_usuario=lng,
-            db_path=DB_PATH,
-            top_n=3
-        )
+        lugares = await asyncio.to_thread(lugares_cercanos, lat, lng, DB_PATH, 3)
 
         DISTANCIA_MAX_KM = 50
         lugares_proximos = [l for l in lugares if l.get("distancia", 999) <= DISTANCIA_MAX_KM]
-        respuesta = formatear_respuesta_cercania(lugares)
+        respuesta        = formatear_respuesta_cercania(lugares)
         return {
-            "respuesta": respuesta,
-            "lugares": lugares,
+            "respuesta":   respuesta,
+            "lugares":     lugares,
             "tiene_datos": bool(lugares_proximos)
         }
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/buscar_externo")
-def buscar_externo(solicitud: SolicitudBusquedaExterna, x_api_key: str = Header(...)):
+async def buscar_externo(solicitud: SolicitudBusquedaExterna, x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="API key inválida")
 
@@ -281,8 +380,8 @@ def buscar_externo(solicitud: SolicitudBusquedaExterna, x_api_key: str = Header(
     )
 
     try:
-        with httpx.Client(timeout=15) as client:
-            resp = client.get(
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.get(
                 "https://overpass-api.de/api/interpreter",
                 params={"data": query}
             )
@@ -328,20 +427,15 @@ def buscar_externo(solicitud: SolicitudBusquedaExterna, x_api_key: str = Header(
 
 
 @app.post("/mapa/kml_externo")
-def descargar_kml_externo(solicitud: SolicitudMapaExterno, x_api_key: str = Header(...)):
+async def descargar_kml_externo(solicitud: SolicitudMapaExterno, x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="API key inválida")
     try:
         datos = [
             {
-                "nombre":    l.nombre,
-                "lat":       l.lat,
-                "lng":       l.lng,
-                "categoria": l.tipo,
-                "direccion": l.direccion,
-                "telefono":  l.telefono,
-                "horario":   l.horario,
-                "website":   l.website,
+                "nombre":    l.nombre, "lat": l.lat, "lng": l.lng,
+                "categoria": l.tipo,  "direccion": l.direccion,
+                "telefono":  l.telefono, "horario": l.horario, "website": l.website,
             }
             for l in solicitud.lugares
         ]
@@ -356,20 +450,15 @@ def descargar_kml_externo(solicitud: SolicitudMapaExterno, x_api_key: str = Head
 
 
 @app.post("/mapa/gpx_externo")
-def descargar_gpx_externo(solicitud: SolicitudMapaExterno, x_api_key: str = Header(...)):
+async def descargar_gpx_externo(solicitud: SolicitudMapaExterno, x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="API key inválida")
     try:
         datos = [
             {
-                "nombre":    l.nombre,
-                "lat":       l.lat,
-                "lng":       l.lng,
-                "categoria": l.tipo,
-                "direccion": l.direccion,
-                "telefono":  l.telefono,
-                "horario":   l.horario,
-                "website":   l.website,
+                "nombre":    l.nombre, "lat": l.lat, "lng": l.lng,
+                "categoria": l.tipo,  "direccion": l.direccion,
+                "telefono":  l.telefono, "horario": l.horario, "website": l.website,
             }
             for l in solicitud.lugares
         ]
