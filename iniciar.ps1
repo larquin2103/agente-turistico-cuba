@@ -144,11 +144,14 @@ while (-not $lista -and $intentos -lt 90) {
     Start-Sleep -Seconds 2
     $intentos++
     try {
-        $resp = Invoke-WebRequest -Uri "http://localhost:8000/" `
-                -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
-        if ($resp.StatusCode -eq 200) { $lista = $true }
+        # curl.exe con --noproxy evita que el proxy del VPN interfiera con localhost
+        $code = & curl.exe -s -o $null -w "%{http_code}" `
+                --noproxy "localhost,127.0.0.1" `
+                --max-time 2 `
+                "http://localhost:8000/" 2>$null
+        if ($code -eq "200") { $lista = $true }
     } catch {}
-    if (-not $lista -and ($intentos % 10 -eq 0)) {
+    if (-not $lista -and ($intentos % 5 -eq 0)) {
         Write-Host "         Aun esperando... ($($intentos * 2)s)" -ForegroundColor Gray
     }
 }
