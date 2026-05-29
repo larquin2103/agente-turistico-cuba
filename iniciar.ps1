@@ -19,13 +19,36 @@ $reg = Get-ItemProperty "HKCU:\Software\Microsoft\Windows\CurrentVersion\Interne
 $proxyActivo   = $reg.ProxyEnable
 $proxyServidor = $reg.ProxyServer
 
-if ($proxyActivo -eq 1 -and $proxyServidor) {
-    if ($proxyServidor -notmatch "^http") {
-        $proxyUrl = "http://$proxyServidor"
-    } else {
-        $proxyUrl = $proxyServidor
+function Parsear-Proxy {
+    param([string]$raw)
+    if (-not $raw) { return "" }
+
+    # Formato multi-esquema: "http=127.0.0.1:64481;https=127.0.0.1:64481;socks=127.0.0.1:64480"
+    if ($raw -match ";") {
+        $tabla = @{}
+        $raw -split ";" | ForEach-Object {
+            if ($_ -match "^(\w+)=(.+)$") { $tabla[$Matches[1]] = $Matches[2] }
+        }
+        foreach ($esquema in @("http", "https")) {
+            if ($tabla.ContainsKey($esquema)) { return "http://$($tabla[$esquema])" }
+        }
+        # Fallback: primer valor
+        $primero = ($raw -split ";")[0]
+        if ($primero -match "=(.+)$") { return "http://$($Matches[1])" }
+        return "http://$primero"
     }
+
+    # Ya tiene esquema
+    if ($raw -match "^https?://") { return $raw }
+
+    # Formato simple: "10.11.0.9:8080"
+    return "http://$raw"
+}
+
+if ($proxyActivo -eq 1 -and $proxyServidor) {
+    $proxyUrl = Parsear-Proxy $proxyServidor
     Write-Host "[PROXY]  Detectado: $proxyUrl" -ForegroundColor Green
+    Write-Host "         (raw registro: $proxyServidor)" -ForegroundColor Gray
 } else {
     $proxyUrl = ""
     Write-Host "[PROXY]  Sin proxy (conexion directa)" -ForegroundColor Yellow
