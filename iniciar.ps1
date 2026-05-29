@@ -140,21 +140,27 @@ Write-Host "         (puede tardar ~15 s la primera vez)" -ForegroundColor Gray
 
 $lista    = $false
 $intentos = 0
-while (-not $lista -and $intentos -lt 90) {
-    Start-Sleep -Seconds 2
+
+# HttpClient con proxy desactivado: unica forma fiable de bypassear el VPN en PowerShell
+$handler            = New-Object System.Net.Http.HttpClientHandler
+$handler.UseProxy   = $false
+$httpClient         = New-Object System.Net.Http.HttpClient($handler)
+$httpClient.Timeout = [System.TimeSpan]::FromSeconds(3)
+
+while (-not $lista -and $intentos -lt 60) {
+    Start-Sleep -Seconds 3
     $intentos++
     try {
-        # curl.exe con --noproxy evita que el proxy del VPN interfiera con localhost
-        $code = & curl.exe -s -o $null -w "%{http_code}" `
-                --noproxy "localhost,127.0.0.1" `
-                --max-time 2 `
-                "http://localhost:8000/" 2>$null
-        if ($code -eq "200") { $lista = $true }
+        $tarea = $httpClient.GetAsync("http://localhost:8000/")
+        if ($tarea.Wait(3000) -and $tarea.Result.IsSuccessStatusCode) {
+            $lista = $true
+        }
     } catch {}
-    if (-not $lista -and ($intentos % 5 -eq 0)) {
-        Write-Host "         Aun esperando... ($($intentos * 2)s)" -ForegroundColor Gray
+    if (-not $lista -and ($intentos % 4 -eq 0)) {
+        Write-Host "         Aun esperando... ($($intentos * 3)s)" -ForegroundColor Gray
     }
 }
+$httpClient.Dispose()
 
 if ($lista) {
     Write-Host "[API]    Lista!" -ForegroundColor Green
