@@ -110,6 +110,31 @@ if (-not $venvDir) {
 }
 Write-Host "[venv]   Entorno virtual: $venvDir\" -ForegroundColor Green
 
+# --- 4b. Verificar dependencias del venv ---
+$pythonExe = Join-Path $projectDir "$venvDir\Scripts\python.exe"
+$chequeo = "import importlib.util as u, sys; " +
+           "faltan = [m for m in ['fastapi', 'telegram', 'httpx', 'chromadb'] if not u.find_spec(m)]; " +
+           "faltan += [] if (u.find_spec('python_multipart') or u.find_spec('multipart')) else ['python-multipart']; " +
+           "sys.exit(1 if faltan else 0)"
+& $pythonExe -c $chequeo 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[deps]   Faltan dependencias en el venv - instalando requirements.txt..." -ForegroundColor Yellow
+    if ($proxyUrl) {
+        $env:HTTP_PROXY  = $proxyUrl
+        $env:HTTPS_PROXY = $proxyUrl
+    }
+    & $pythonExe -m pip install -r (Join-Path $projectDir "requirements.txt")
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[ERROR]  No se pudieron instalar las dependencias" -ForegroundColor Red
+        Write-Host "         Instala manualmente: $venvDir\Scripts\pip install -r requirements.txt" -ForegroundColor Red
+        Read-Host "Presiona Enter para cerrar"
+        exit 1
+    }
+    Write-Host "[deps]   Dependencias instaladas" -ForegroundColor Green
+} else {
+    Write-Host "[deps]   Dependencias OK" -ForegroundColor Green
+}
+
 # --- 5. Abrir ventana de la API ---
 Write-Host ""
 Write-Host "[API]    Abriendo ventana de la API..." -ForegroundColor Cyan
