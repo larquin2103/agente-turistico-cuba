@@ -121,15 +121,18 @@ Todos los endpoints excepto `GET /` requieren el header `x-api-key` con el valor
 | Método | Ruta | Descripción |
 |---|---|---|
 | `GET` | `/` | Estado: modelo, embeddings, lugares en DB, usuarios activos |
-| `POST` | `/chat` | Chat RAG con historial por `usuario_id` |
+| `POST` | `/chat` | Chat RAG con historial por `usuario_id`, con contexto de fecha/hora y GPS |
 | `POST` | `/reset` | Borrar historial de un `usuario_id` |
 | `POST` | `/buscar_lugar` | Exact match → fuzzy → vectorial semántico |
-| `POST` | `/cercanos` | Lugares cercanos (GPS o nombre de barrio) |
-| `POST` | `/buscar_externo` | Búsqueda en OpenStreetMap via Overpass API |
-| `POST` | `/mapa/kml` | KML para lugar en DB |
-| `POST` | `/mapa/gpx` | GPX para lugar en DB |
+| `POST` | `/cercanos` | Lugares cercanos (GPS o nombre de barrio), con filtro opcional de categoría |
+| `POST` | `/buscar_externo` | Búsqueda en OpenStreetMap via Overpass API (radio configurable) |
+| `POST` | `/mapa/kml` | KML para un lugar en DB |
+| `POST` | `/mapa/gpx` | GPX para un lugar en DB |
+| `POST` | `/mapa/kml_multi` | KML combinado para varios lugares en DB |
+| `POST` | `/mapa/gpx_multi` | GPX combinado para varios lugares en DB |
 | `POST` | `/mapa/kml_externo` | KML desde coordenadas directas |
 | `POST` | `/mapa/gpx_externo` | GPX desde coordenadas directas |
+| `POST` | `/transcribir` | Transcribe notas de voz con Groq Whisper |
 
 Documentación interactiva: `http://localhost:8000/docs`
 
@@ -168,7 +171,7 @@ TTL de 24 horas — `_limpiar_callback_store()` se llama en cada `guardar_callba
 
 ### TTL de chat engines
 
-Los motores de chat de LlamaIndex se crean por `usuario_id` y se eliminan tras 2 horas de inactividad. Una tarea de fondo corre cada 30 minutos vía `asyncio.create_task(_limpiar_engines_loop())` iniciada en el `lifespan` de FastAPI.
+Los motores de chat de LlamaIndex se crean por `usuario_id` con `chat_mode="context"` y `similarity_top_k=5` (más contexto recuperado por consulta) y se eliminan tras 2 horas de inactividad. Una tarea de fondo corre cada 30 minutos vía `asyncio.create_task(_limpiar_engines_loop())` iniciada en el `lifespan` de FastAPI.
 
 ### Archivos temporales — BytesIO
 
@@ -182,11 +185,11 @@ await query.message.reply_document(document=buf, ...)
 
 ### Tarjetas visuales — hasta 3 por respuesta
 
-`responder()` en `bot.py` llama `buscar_datos_lugar()` para los primeros `MAX_TARJETAS * 2 = 6` nombres detectados en la respuesta del LLM y envía tarjeta para los primeros 3 que tengan coordenadas GPS en la DB. Si hay más de 1, ofrece un mapa combinado.
+`procesar_pregunta()` en `bot.py` (compartida por `responder()` y `manejar_voz()`) llama `buscar_datos_lugar()` —ahora async, vía `/buscar_lugar`— para los primeros `MAX_TARJETAS * 2 = 6` nombres detectados en la respuesta del LLM y envía tarjeta para los primeros 3 que tengan coordenadas GPS. Si hay más de 1, ofrece un mapa combinado (`/mapa/kml_multi` y `/mapa/gpx_multi`). El mismo patrón de hasta 3 tarjetas + mapa combinado se usa en `manejar_ubicacion()` y en el flujo de cercanía por texto, con todos los lugares devueltos por `/cercanos`.
 
-### Inyección de fecha/hora
+### Inyección de contexto — fecha/hora y GPS
 
-`/chat` en `api.py` antepone `[Hora actual: martes 29/05/2026 14:30]` al texto del usuario antes de enviarlo al LLM. Así el LLM puede responder preguntas sobre horarios con conciencia temporal.
+`/chat` en `api.py` antepone `[Hora actual: martes 29/05/2026 14:30]` al texto del usuario antes de enviarlo al LLM. Si `bot.py` tiene `lat`/`lng` guardados en `context.user_data` (de un mensaje de ubicación previo), se añaden también como `[Ubicación GPS actual del usuario: lat, lng]`. Así el LLM responde con conciencia temporal y espacial.
 
 ### Detección de nombres de lugares
 
@@ -198,23 +201,52 @@ await query.message.reply_document(document=buf, ...)
 
 El system prompt de `api.py` instruye explícitamente al LLM a usar negritas para nombres de lugares.
 
+### Mapas combinados multi-lugar
+
+`/mapa/kml_multi` y `/mapa/gpx_multi` reciben una lista de `nombres` y generan un único KML/GPX con todos los lugares encontrados, vía `_buscar_documentos()` (exact match → fuzzy). `manejar_botones()` en `bot.py` hace **una sola llamada** con todos los nombres en lugar de iterar y detenerse en el primer resultado, para que el mapa "combinado" incluya realmente todos los lugares ofrecidos.
+
+### Filtro de categoría en lugares cercanos
+
+`detectar_categoria()` en `bot.py` mapea palabras clave del usuario (en los 6 idiomas soportados) a un filtro de subcadena sobre el campo "Categoría de búsqueda" de cada documento: p. ej. "restaurante"/"food"/"comida" → `"gastronomia"`, "museo"/"museum" → `"tradi"`, "naturaleza"/"parque" → `"natural"`, "auto"/"rentar"/"alquiler" → `"transpor"`, "hotel"/"alojamiento" → `"servicio"`. El filtro se envía como `categoria` en `/cercanos` y se aplica en `lugares_cercanos()` (`ubicacion.py`).
+
+### Regla anti-alucinación
+
+El `SYSTEM_PROMPT` de `api.py` prohíbe explícitamente inventar nombres, direcciones, teléfonos, horarios, precios o coordenadas que no estén en el contexto recuperado. Si no hay contexto relevante para la pregunta, el LLM debe responder "No tengo información sobre eso en mi base de datos" en lugar de improvisar.
+
+### Log de preguntas sin contexto relevante
+
+`_log_si_sin_contexto()` en `api.py` revisa el `score` máximo de los `source_nodes` de cada respuesta del chat engine. Si está por debajo de `UMBRAL_RELEVANCIA = 0.5`, registra la pregunta en `preguntas_sin_datos.log` (timestamp ISO, score, texto) — útil para detectar qué información falta en la base de datos.
+
+### Manejo amigable del límite de Groq (429)
+
+`/chat` y `/transcribir` capturan errores 429 de Groq y responden con `HTTPException(429, ...)` y un mensaje amigable. `procesar_pregunta()` en `bot.py` detecta el status 429 en `httpx.HTTPStatusError` y muestra ese mensaje al usuario en vez de un error genérico.
+
+### Notas de voz (Groq Whisper)
+
+`manejar_voz()` en `bot.py` descarga el audio de Telegram (`voice` o `audio`), lo envía como multipart a `/transcribir` (requiere `python-multipart` en `api.py`), que llama a Groq Whisper (`whisper-large-v3-turbo`, gratuito con la misma API key). El texto transcrito se muestra al usuario y se procesa con `procesar_pregunta()`, igual que un mensaje de texto normal.
+
+### Ampliación de radio en búsqueda externa
+
+`mostrar_resultados_externos()` busca primero en Overpass con un radio de 1 km (`radio_m=1000`). Si no hay resultados, ofrece un botón "🔍 Ampliar búsqueda a 3 km" con `callback_data=f"ampliar|{lat}|{lng}"`, manejado en `manejar_botones()` repitiendo la búsqueda con `radio_m=3000`.
+
 ---
 
 ## Flujo del usuario GPS
 
-1. Usuario comparte ubicación → `manejar_ubicacion()`
+1. Usuario comparte ubicación → `manejar_ubicacion()` (guarda lat/lng en `context.user_data`)
 2. Bot llama `/cercanos` con lat/lng
-3. Si `tiene_datos=True`: muestra texto, envía tarjeta del primer lugar, ofrece KML/GPX combinado
-4. Si `tiene_datos=False`: avisa "no tengo datos de tu zona" → llama `mostrar_resultados_externos()` → Overpass API → lista de lugares OSM con Google Maps links por cada uno
+3. Si `tiene_datos=True`: muestra texto, envía hasta `MAX_TARJETAS=3` tarjetas y ofrece KML/GPX combinado de todos los lugares
+4. Si `tiene_datos=False`: avisa "no tengo datos de tu zona" → llama `mostrar_resultados_externos()` → Overpass API (radio 1 km) → lista de lugares OSM con Google Maps links por cada uno; si no hay resultados, ofrece botón para ampliar a 3 km
 
 ---
 
 ## Flujo del usuario texto
 
-1. Usuario escribe pregunta → `responder()`
-2. Detección de keywords de cercanía ("cerca", "nearby", etc.)
-3. Si es cercanía: usa coords guardadas en `context.user_data` o texto de ubicación → `/cercanos`
-4. Si es RAG: llama `/chat` → LLM responde con negritas en nombres → `detectar_lugares()` → hasta 3 tarjetas con foto, datos, botones Google Maps + KML/GPX
+1. Usuario escribe pregunta → `responder()` (valida rate limit) → `procesar_pregunta()`
+2. Detección de keywords de cercanía en los 6 idiomas soportados ("cerca", "nearby", "più vicino", "près", "in der nähe", "perto", "estoy en", "mi ubicación", etc.)
+3. Si es cercanía: usa coords guardadas en `context.user_data` o texto de ubicación, detecta categoría con `detectar_categoria()` → `/cercanos` → hasta 3 tarjetas + mapa combinado
+4. Si es RAG: llama `/chat` (con hora actual y GPS si están disponibles) → LLM responde con negritas en nombres → `detectar_lugares()` → hasta 3 tarjetas con foto, datos, botones Google Maps + KML/GPX, y mapa combinado si hay más de 1
+5. Las notas de voz (`manejar_voz()`) se transcriben vía `/transcribir` (Groq Whisper) y siguen el mismo flujo que un mensaje de texto
 
 ---
 
@@ -248,6 +280,8 @@ Los archivos en `datos/` siguen el formato de Google Maps exportado por SerpAPI.
 
 `cargar_datos.py` construye un texto estructurado con etiquetas `Nombre: X\nDirección: Y\n...` que `ubicacion.py` y `api.py` parsean con regex. Añadir nuevos lugares: copiar JSON en `datos/` y correr `python cargar_datos.py datos/nuevo.json`, luego reiniciar `api.py`.
 
+`obtener_place_ids_existentes()` lee los `place_id` ya indexados en ChromaDB antes de cargar; `cargar_carpeta()` calcula este conjunto una sola vez y lo comparte entre archivos, así que cualquier lugar repetido (mismo `place_id`, incluso en archivos distintos) se omite e informa como "Omitidos N lugares duplicados".
+
 ---
 
 ## Lo que NO hacer
@@ -260,3 +294,4 @@ Los archivos en `datos/` siguen el formato de Google Maps exportado por SerpAPI.
 - No hardcodear `API_KEY` ni tokens en el código — siempre via `os.getenv()`
 - No usar `httpx.Client` síncrono en código async — siempre `httpx.AsyncClient`
 - No reiniciar solo el bot cuando se añaden datos nuevos — hay que reiniciar `api.py` (tiene el índice en memoria)
+- No quitar la regla anti-alucinación del `SYSTEM_PROMPT` — evita que el LLM invente lugares, direcciones u horarios fuera del contexto recuperado

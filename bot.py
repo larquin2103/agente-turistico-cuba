@@ -42,6 +42,32 @@ callback_store: dict = {}
 # Rate limiting — {user_id: [timestamps]}
 _rate_limit: dict = defaultdict(list)
 
+# Máximo de tarjetas visuales por respuesta
+MAX_TARJETAS = 3
+
+# Palabra clave detectada en el texto del usuario → filtro de "Categoría de búsqueda"
+CATEGORIA_FILTROS = {
+    "restaurante": "gastronomia", "restaurant": "gastronomia", "ristorante": "gastronomia",
+    "comida": "gastronomia", "food": "gastronomia", "essen": "gastronomia",
+    "gastronomia": "gastronomia", "gastronomía": "gastronomia", "comer": "gastronomia",
+    "museo": "tradi", "museum": "tradi", "musée": "tradi", "museu": "tradi",
+    "cultura": "tradi", "culture": "tradi", "cultural": "tradi", "kultur": "tradi",
+    "naturaleza": "natural", "nature": "natural", "natur": "natural",
+    "parque": "natural", "park": "natural",
+    "transporte": "transpor", "transport": "transpor",
+    "auto": "transpor", "car": "transpor", "rentar": "transpor", "alquiler": "transpor",
+    "hotel": "servicio", "alojamiento": "servicio", "accommodation": "servicio",
+}
+
+
+def detectar_categoria(texto: str) -> str:
+    """Detecta un filtro de categoría a partir de palabras clave en el texto del usuario."""
+    texto_lower = texto.lower()
+    for palabra, filtro in CATEGORIA_FILTROS.items():
+        if palabra in texto_lower:
+            return filtro
+    return None
+
 
 def _check_rate_limit(user_id: str, max_req: int = 5, ventana_seg: int = 60) -> bool:
     """True si el usuario puede continuar, False si excedió el límite."""
@@ -154,13 +180,13 @@ TIPO_LABELS = {
 }
 
 
-async def mostrar_resultados_externos(update: Update, lat: float, lng: float):
+async def mostrar_resultados_externos(update: Update, lat: float, lng: float, radio_m: int = 1000):
     """Busca en OpenStreetMap (Overpass) cuando no hay datos locales."""
     try:
         async with httpx.AsyncClient(timeout=20) as client:
             resp = await client.post(
                 f"{API_URL}/buscar_externo",
-                json={"lat": lat, "lng": lng, "radio_m": 1000},
+                json={"lat": lat, "lng": lng, "radio_m": radio_m},
                 headers={"x-api-key": API_KEY}
             )
 
@@ -175,10 +201,18 @@ async def mostrar_resultados_externos(update: Update, lat: float, lng: float):
         lugares = data.get("lugares", [])
 
         if not lugares:
-            await update.message.reply_text(
-                "🔍 No encontré lugares en un radio de 1 km.\n"
+            radio_km = radio_m / 1000
+            mensaje = (
+                f"🔍 No encontré lugares en un radio de {radio_km:.0f} km.\n"
                 f"📍 Explora la zona en Google Maps:\nhttps://maps.google.com/?q={lat},{lng}"
             )
+            if radio_m < 3000:
+                teclado = InlineKeyboardMarkup([[
+                    InlineKeyboardButton("🔍 Ampliar búsqueda a 3 km", callback_data=f"ampliar|{lat}|{lng}")
+                ]])
+                await update.message.reply_text(mensaje, reply_markup=teclado)
+            else:
+                await update.message.reply_text(mensaje)
             return
 
         lineas = [
@@ -293,6 +327,8 @@ async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "  \"¿Qué hay cerca del Vedado?\"\n\n"
         "🗺️ *Mapas offline (OsmAnd / Maps.me):*\n"
         "  Descarga KML o GPX para navegar sin internet\n\n"
+        "🎙️ *Notas de voz:*\n"
+        "  Envía un audio con tu pregunta, te entiendo igual\n\n"
         "📋 *Comandos:*\n"
         "  /start — Reiniciar\n"
         "  /ayuda — Esta ayuda\n"
@@ -376,7 +412,8 @@ async def manejar_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if tiene_datos:
             await update.message.reply_text(data["respuesta"], parse_mode="Markdown")
-            await enviar_tarjeta_lugar(update, lugares[0])
+            for lugar in lugares[:MAX_TARJETAS]:
+                await enviar_tarjeta_lugar(update, lugar)
             nombres = [l["nombre"] for l in lugares]
             teclado = InlineKeyboardMarkup([
                 [InlineKeyboardButton(
@@ -410,7 +447,7 @@ async def manejar_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handler principal — detecta cercanía o responde con RAG + historial."""
+    """Handler principal — valida rate limit y delega a procesar_pregunta()."""
     pregunta   = update.message.text
     usuario_id = str(update.message.from_user.id)
 
@@ -420,12 +457,18 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
+    await procesar_pregunta(update, context, pregunta, usuario_id)
+
+
+async def procesar_pregunta(update: Update, context: ContextTypes.DEFAULT_TYPE,
+                             pregunta: str, usuario_id: str):
+    """Detecta cercanía o responde con RAG + historial."""
     logging.info(f">>> MENSAJE: '{pregunta}' de usuario {usuario_id}")
 
     palabras_cercania = [
-        "cerca", "cercano", "próximo", "nearby", "close",
-        "più vicino", "près", "in der nähe",
-        "más cercano", "estoy en", "desde", "mi ubicación"
+        "cerca", "cercano", "próximo", "nearby", "close to", "close by",
+        "più vicino", "près", "in der nähe", "perto",
+        "más cercano", "estoy en", "mi ubicación"
     ]
     es_cercania = any(p in pregunta.lower() for p in palabras_cercania)
 
@@ -446,6 +489,10 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 payload["texto_ubicacion"] = pregunta
 
+            categoria = detectar_categoria(pregunta)
+            if categoria:
+                payload["categoria"] = categoria
+
             async with httpx.AsyncClient(timeout=30) as client:
                 response = await client.post(
                     f"{API_URL}/cercanos",
@@ -463,7 +510,8 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             if tiene_datos:
                 await update.message.reply_text(data["respuesta"], parse_mode="Markdown")
-                await enviar_tarjeta_lugar(update, lugares[0])
+                for lugar in lugares[:MAX_TARJETAS]:
+                    await enviar_tarjeta_lugar(update, lugar)
                 nombres = [l["nombre"] for l in lugares]
                 teclado = InlineKeyboardMarkup([
                     [InlineKeyboardButton(
@@ -494,10 +542,17 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         else:
             # ── Flujo RAG con historial ──
+            payload = {"texto": pregunta, "usuario_id": usuario_id}
+            lat_ctx = context.user_data.get("lat")
+            lng_ctx = context.user_data.get("lng")
+            if lat_ctx and lng_ctx:
+                payload["lat"] = lat_ctx
+                payload["lng"] = lng_ctx
+
             async with httpx.AsyncClient(timeout=120) as client:
                 response = await client.post(
                     f"{API_URL}/chat",
-                    json={"texto": pregunta, "usuario_id": usuario_id},
+                    json=payload,
                     headers={"x-api-key": API_KEY}
                 )
                 response.raise_for_status()
@@ -512,7 +567,6 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if nombres_lugares:
                 ultimos_lugares[usuario_id] = nombres_lugares[0]
 
-                MAX_TARJETAS   = 3
                 lugares_con_db = []
 
                 for nombre_candidato in nombres_lugares[:MAX_TARJETAS * 2]:
@@ -547,13 +601,13 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "⚠️ No puedo conectarme al servidor. ¿Está la API corriendo?\n"
             "Intenta de nuevo en unos momentos."
         )
-        logging.error("API no disponible en responder")
+        logging.error("API no disponible en procesar_pregunta")
     except httpx.TimeoutException:
         stop_typing.set()
         await update.message.reply_text(
             "⏳ La consulta tardó demasiado. Por favor intenta de nuevo."
         )
-        logging.error("Timeout en responder")
+        logging.error("Timeout en procesar_pregunta")
     except httpx.HTTPStatusError as e:
         stop_typing.set()
         detalle = ""
@@ -562,18 +616,76 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception:
             pass
         logging.error(f"Error API {e.response.status_code}: {detalle}")
-        await update.message.reply_text(
-            "Lo siento, ocurrió un error en el servidor. Por favor intenta de nuevo."
-        )
+        if e.response.status_code == 429:
+            await update.message.reply_text(
+                detalle or "⏱️ Hemos alcanzado el límite de consultas. Espera un momento e intenta de nuevo."
+            )
+        else:
+            await update.message.reply_text(
+                "Lo siento, ocurrió un error en el servidor. Por favor intenta de nuevo."
+            )
     except Exception as e:
         stop_typing.set()
         await update.message.reply_text(
             "Lo siento, ocurrió un error inesperado. Por favor intenta de nuevo."
         )
-        logging.error(f"Error en responder: {e}")
+        logging.error(f"Error en procesar_pregunta: {e}")
     finally:
         stop_typing.set()
         typing_task.cancel()
+
+
+async def manejar_voz(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Transcribe notas de voz con Groq Whisper y las procesa como texto (F5)."""
+    usuario_id = str(update.message.from_user.id)
+
+    if not _check_rate_limit(usuario_id):
+        await update.message.reply_text(
+            "⏱️ Demasiadas consultas seguidas. Espera un momento e intenta de nuevo."
+        )
+        return
+
+    await update.message.reply_text("🎙️ Transcribiendo audio...")
+
+    try:
+        voz         = update.message.voice or update.message.audio
+        archivo     = await voz.get_file()
+        audio_bytes = bytes(await archivo.download_as_bytearray())
+
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                f"{API_URL}/transcribir",
+                files={"audio": ("audio.ogg", audio_bytes, "audio/ogg")},
+                headers={"x-api-key": API_KEY}
+            )
+            resp.raise_for_status()
+            texto = resp.json().get("texto", "").strip()
+
+        if not texto:
+            await update.message.reply_text(
+                "No pude entender el audio. Intenta de nuevo o escribe tu pregunta."
+            )
+            return
+
+        await update.message.reply_text(f"🎙️ _Escuché:_ \"{texto}\"", parse_mode="Markdown")
+        await procesar_pregunta(update, context, texto, usuario_id)
+
+    except httpx.ConnectError:
+        await update.message.reply_text(
+            "⚠️ No puedo conectarme al servidor. Asegúrate de que la API está corriendo."
+        )
+        logging.error("API no disponible en manejar_voz")
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 429:
+            await update.message.reply_text(
+                "⏱️ Hemos alcanzado el límite de transcripciones. Intenta de nuevo en unos momentos."
+            )
+        else:
+            await update.message.reply_text("No pude procesar el audio. Intenta de nuevo.")
+        logging.error(f"Error transcribiendo voz: {e}")
+    except Exception as e:
+        await update.message.reply_text("No pude procesar el audio. Intenta de nuevo.")
+        logging.error(f"Error transcribiendo voz: {e}")
 
 
 async def enviar_tarjeta_lugar(update: Update, lugar: dict):
@@ -622,7 +734,13 @@ async def manejar_botones(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     usuario_id = str(query.from_user.id)
-    datos      = query.data.split("|", 1)
+    datos      = query.data.split("|")
+
+    if datos[0] == "ampliar" and len(datos) >= 3:
+        lat, lng = float(datos[1]), float(datos[2])
+        await query.message.reply_text("🔍 Ampliando búsqueda a 3 km...")
+        await mostrar_resultados_externos(update, lat, lng, radio_m=3000)
+        return
 
     if datos[0] == "map" and len(datos) > 1:
         stored        = callback_store.get(datos[1], {})
@@ -688,24 +806,20 @@ async def manejar_botones(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown"
             )
 
-            response_ok    = None
-            nombre_exitoso = None
             async with httpx.AsyncClient(timeout=30) as client:
-                for nombre_candidato in nombres:
-                    resp = await client.post(
-                        f"{API_URL}/mapa/{formato_real}",
-                        json={"place_id": "", "nombre": nombre_candidato},
-                        headers={"x-api-key": API_KEY}
-                    )
-                    if resp.status_code == 200:
-                        response_ok    = resp
-                        nombre_exitoso = nombre_candidato
-                        break
+                resp = await client.post(
+                    f"{API_URL}/mapa/{formato_real}_multi",
+                    json={"nombres": nombres},
+                    headers={"x-api-key": API_KEY}
+                )
 
-            if response_ok:
-                nombre_arch = nombre_exitoso.replace(" ", "_")[:30]
-                buf         = io.BytesIO(response_ok.content)
-                buf.name    = f"{nombre_arch}.{formato_real}"
+            if resp.status_code == 200:
+                nombre_arch = (
+                    nombres[0].replace(" ", "_")[:30] if len(nombres) == 1
+                    else "lugares_turisticos"
+                )
+                buf      = io.BytesIO(resp.content)
+                buf.name = f"{nombre_arch}.{formato_real}"
                 await query.message.reply_document(
                     document=buf,
                     filename=f"{nombre_arch}.{formato_real}",
@@ -715,7 +829,7 @@ async def manejar_botones(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await query.message.reply_text(
                     f"No encontré coordenadas GPS para *{label}*.\n"
-                    "Este lugar puede no tener datos de ubicación en nuestra base de datos.",
+                    "Estos lugares pueden no tener datos de ubicación en nuestra base de datos.",
                     parse_mode="Markdown"
                 )
 
@@ -742,6 +856,7 @@ def main():
     app.add_handler(CommandHandler("reset",      reset))
     app.add_handler(CommandHandler("emergencia", emergencia))
     app.add_handler(MessageHandler(filters.LOCATION, manejar_ubicacion))
+    app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, manejar_voz))
     app.add_handler(CallbackQueryHandler(manejar_botones))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder))
 

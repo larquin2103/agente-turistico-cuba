@@ -25,19 +25,28 @@ def extraer_campo(texto: str, campo: str) -> str:
     return match.group(1).strip() if match else ""
 
 def lugares_cercanos(lat_usuario: float, lng_usuario: float,
-                     db_path: str, top_n: int = 3) -> list:
+                     db_path: str, top_n: int = 3,
+                     categoria_filtro: str = None) -> list:
     """
     Calcula los N lugares más cercanos a la posición del usuario.
+    Si se indica categoria_filtro, descarta lugares cuya "Categoría de
+    búsqueda" no contenga ese texto (case-insensitive).
     Retorna lista de dicts ordenada por distancia.
     """
     client = chromadb.PersistentClient(path=db_path)
     col = client.get_or_create_collection("lugares_turisticos")
     todos = col.get()
 
+    filtro = categoria_filtro.lower() if categoria_filtro else None
+
     resultados = []
     for texto in todos["documents"]:
         lat, lng = extraer_coordenadas_texto(texto)
         if lat is None or lng is None:
+            continue
+
+        categoria = extraer_campo(texto, "Categoría de búsqueda")
+        if filtro and filtro not in categoria.lower():
             continue
 
         distancia = haversine(lat_usuario, lng_usuario, lat, lng)
@@ -49,7 +58,7 @@ def lugares_cercanos(lat_usuario: float, lng_usuario: float,
             "rating":    extraer_campo(texto, "Calificación"),
             "horario":   extraer_campo(texto, "Horario"),
             "website":   extraer_campo(texto, "Sitio web"),
-            "categoria": extraer_campo(texto, "Categoría de búsqueda"),
+            "categoria": categoria,
             "lat":       lat,
             "lng":       lng,
             "distancia": round(distancia, 2),
