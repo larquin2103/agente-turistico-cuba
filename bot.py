@@ -30,6 +30,7 @@ from telegram.ext import (
     CallbackQueryHandler, filters, ContextTypes
 )
 from media import obtener_imagen, construir_caption
+from idiomas import IDIOMAS, IDIOMA_DEFAULT, idioma_desde_codigo, t, tipo_label
 
 logging.basicConfig(level=logging.INFO)
 
@@ -167,20 +168,21 @@ async def buscar_datos_lugar(nombre: str) -> dict:
         return None
 
 
-TIPO_LABELS = {
-    "restaurant": "Restaurante", "cafe": "Cafetería", "bar": "Bar",
-    "pub": "Bar", "fast_food": "Comida rápida", "museum": "Museo",
-    "hotel": "Hotel", "hostel": "Hostal", "guest_house": "Casa huésped",
-    "attraction": "Atracción turística", "viewpoint": "Mirador",
-    "gallery": "Galería de arte", "theatre": "Teatro", "cinema": "Cine",
-    "pharmacy": "Farmacia", "bank": "Banco",
-    "information": "Información turística", "monument": "Monumento",
-    "ruins": "Ruinas", "castle": "Fortaleza", "church": "Iglesia",
-    "place_of_worship": "Lugar de culto", "memorial": "Memorial",
-}
+def obtener_idioma(context: ContextTypes.DEFAULT_TYPE, update: Update = None) -> str:
+    """Devuelve el idioma preferido del usuario, detectándolo de Telegram si es la primera vez."""
+    idioma = context.user_data.get("idioma")
+    if idioma:
+        return idioma
+    codigo = None
+    if update and update.effective_user:
+        codigo = update.effective_user.language_code
+    idioma = idioma_desde_codigo(codigo)
+    context.user_data["idioma"] = idioma
+    return idioma
 
 
-async def mostrar_resultados_externos(update: Update, lat: float, lng: float, radio_m: int = 1000):
+async def mostrar_resultados_externos(update: Update, lat: float, lng: float,
+                                       radio_m: int = 1000, idioma: str = IDIOMA_DEFAULT):
     """Busca en OpenStreetMap (Overpass) cuando no hay datos locales."""
     try:
         async with httpx.AsyncClient(timeout=20) as client:
@@ -192,8 +194,8 @@ async def mostrar_resultados_externos(update: Update, lat: float, lng: float, ra
 
         if resp.status_code != 200:
             await update.message.reply_text(
-                "🔍 La búsqueda externa no está disponible en este momento.\n"
-                f"📍 Explora el área en Google Maps:\nhttps://maps.google.com/?q={lat},{lng}"
+                t("busqueda_externa_no_disponible", idioma,
+                  url=f"https://maps.google.com/?q={lat},{lng}")
             )
             return
 
@@ -202,26 +204,21 @@ async def mostrar_resultados_externos(update: Update, lat: float, lng: float, ra
 
         if not lugares:
             radio_km = radio_m / 1000
-            mensaje = (
-                f"🔍 No encontré lugares en un radio de {radio_km:.0f} km.\n"
-                f"📍 Explora la zona en Google Maps:\nhttps://maps.google.com/?q={lat},{lng}"
-            )
+            mensaje = t("sin_resultados_radio", idioma, radio_km=radio_km,
+                        url=f"https://maps.google.com/?q={lat},{lng}")
             if radio_m < 3000:
                 teclado = InlineKeyboardMarkup([[
-                    InlineKeyboardButton("🔍 Ampliar búsqueda a 3 km", callback_data=f"ampliar|{lat}|{lng}")
+                    InlineKeyboardButton(t("boton_ampliar_radio", idioma), callback_data=f"ampliar|{lat}|{lng}")
                 ]])
                 await update.message.reply_text(mensaje, reply_markup=teclado)
             else:
                 await update.message.reply_text(mensaje)
             return
 
-        lineas = [
-            "🔍 *Resultados de búsqueda en internet (OpenStreetMap):*\n",
-            "_Datos públicos de OpenStreetMap._\n"
-        ]
+        lineas = [t("resultados_externos_titulo", idioma)]
 
         for i, lugar in enumerate(lugares[:8], 1):
-            tipo   = TIPO_LABELS.get(lugar.get("tipo", ""), lugar.get("tipo", "Lugar"))
+            tipo   = tipo_label(lugar.get("tipo", ""), idioma)
             dist   = lugar.get("distancia", 0)
             dist_t = f"{int(dist * 1000)} m" if dist < 1 else f"{dist:.1f} km"
 
@@ -248,29 +245,27 @@ async def mostrar_resultados_externos(update: Update, lat: float, lng: float, ra
 
         teclado = InlineKeyboardMarkup([[
             InlineKeyboardButton(
-                f"🗺️ KML ({len(lugares)} lugares)",
+                t("boton_kml_n", idioma, n=len(lugares)),
                 callback_data=f"map|{guardar_callback_externo('kml', lugares)}"
             ),
             InlineKeyboardButton(
-                f"📍 GPX ({len(lugares)} lugares)",
+                t("boton_gpx_n", idioma, n=len(lugares)),
                 callback_data=f"map|{guardar_callback_externo('gpx', lugares)}"
             )
         ]])
         await update.message.reply_text(
-            "¿Quieres descargar el mapa para navegar sin internet?",
+            t("pregunta_descargar_mapa", idioma),
             reply_markup=teclado
         )
 
     except httpx.TimeoutException:
         await update.message.reply_text(
-            "⏳ La búsqueda externa tardó demasiado.\n"
-            f"📍 Explora la zona en: https://maps.google.com/?q={lat},{lng}"
+            t("busqueda_externa_timeout", idioma, url=f"https://maps.google.com/?q={lat},{lng}")
         )
     except Exception as e:
         logging.error(f"Error en búsqueda externa: {e}")
         await update.message.reply_text(
-            "🔍 No pude completar la búsqueda externa.\n"
-            f"📍 Explora el área en: https://maps.google.com/?q={lat},{lng}"
+            t("busqueda_externa_error", idioma, url=f"https://maps.google.com/?q={lat},{lng}")
         )
 
 
@@ -285,8 +280,9 @@ async def keep_typing(chat_id: int, bot, stop_event: asyncio.Event):
 # ──────────────────────────────────────────────────────────
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    idioma  = obtener_idioma(context, update)
     teclado = ReplyKeyboardMarkup(
-        [[KeyboardButton("📍 Compartir mi ubicación", request_location=True)]],
+        [[KeyboardButton(t("boton_compartir_ubicacion", idioma), request_location=True)]],
         resize_keyboard=True,
         one_time_keyboard=False
     )
@@ -298,75 +294,26 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "🇫🇷 Bonjour, je suis votre guide touristique de Cuba. Posez vos questions en français!\n"
         "🇩🇪 Hallo, ich bin dein Reiseführer für Kuba. Frag mich auf Deutsch!\n"
         "🇧🇷 Olá, sou seu guia turístico de Cuba. Pergunte em português!\n\n"
-        "📍 Comparte tu ubicación para encontrar lugares cercanos\n"
-        "❓ /ayuda — qué puedo hacer\n"
-        "🆘 /emergencia — números de urgencia en Cuba",
+        + t("start_pie", idioma),
         parse_mode="Markdown",
         reply_markup=teclado
     )
 
 
 async def ayuda(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    texto = (
-        "🇨🇺 *Cuba Travel Guide — ¿Qué puedo hacer?*\n\n"
-        "Puedes preguntarme en *cualquier idioma*:\n\n"
-        "🍽️ *Gastronomía:*\n"
-        "  \"¿Dónde comer en La Habana Vieja?\"\n"
-        "  \"Best restaurants near Vedado\"\n\n"
-        "🏛️ *Cultura e historia:*\n"
-        "  \"¿Qué museos hay en La Habana?\"\n"
-        "  \"Musei e monumenti all'Avana\"\n\n"
-        "🌿 *Naturaleza:*\n"
-        "  \"Parques naturales cerca del Vedado\"\n"
-        "  \"Where can I see nature in Havana?\"\n\n"
-        "🚌 *Transporte:*\n"
-        "  \"¿Cómo llegar al aeropuerto?\"\n"
-        "  \"Car rental in Havana\"\n\n"
-        "📍 *Lugares cercanos:*\n"
-        "  Comparte tu ubicación GPS → los más cercanos\n"
-        "  \"¿Qué hay cerca del Vedado?\"\n\n"
-        "🗺️ *Mapas offline (OsmAnd / Maps.me):*\n"
-        "  Descarga KML o GPX para navegar sin internet\n\n"
-        "🎙️ *Notas de voz:*\n"
-        "  Envía un audio con tu pregunta, te entiendo igual\n\n"
-        "📋 *Comandos:*\n"
-        "  /start — Reiniciar\n"
-        "  /ayuda — Esta ayuda\n"
-        "  /reset — Borrar historial de conversación\n"
-        "  /emergencia — Números de urgencia en Cuba\n\n"
-        "💡 El bot recuerda el contexto. Puedes preguntar "
-        "\"¿Y el horario?\" o \"Tell me more\" como seguimiento."
-    )
-    await update.message.reply_text(texto, parse_mode="Markdown")
+    idioma = obtener_idioma(context, update)
+    await update.message.reply_text(t("ayuda_texto", idioma), parse_mode="Markdown")
 
 
 async def emergencia(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Números de emergencia y contactos útiles en Cuba."""
-    await update.message.reply_text(
-        "🆘 *Emergencias en Cuba*\n\n"
-        "🚒 Bomberos: *105*\n"
-        "🚓 Policía: *106*\n"
-        "🚑 Ambulancia / Urgencias: *104*\n"
-        "⚡ Avería eléctrica: *185*\n\n"
-        "🏥 *Hospitales para extranjeros — La Habana:*\n\n"
-        "• *Cira García* (CIMEX)\n"
-        "  📍 Calle 20 No. 4101 esq. 41, Miramar\n"
-        "  📞 +53 7 204-2811\n\n"
-        "• *Hermanos Ameijeiras*\n"
-        "  📍 San Lázaro 701, Centro Habana\n"
-        "  📞 +53 7 876-1000\n\n"
-        "💱 *Casas de cambio (CADECA):*\n"
-        "  • Obispo y Cuba, La Habana Vieja\n"
-        "  • Hotel Nacional, Vedado\n"
-        "  • Aeropuerto José Martí\n\n"
-        "📞 *Asisttur* (asistencia al turista):\n"
-        "  +53 7 866-4499 | asisttur.cu",
-        parse_mode="Markdown"
-    )
+    idioma = obtener_idioma(context, update)
+    await update.message.reply_text(t("emergencia_texto", idioma), parse_mode="Markdown")
 
 
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     usuario_id = str(update.message.from_user.id)
+    idioma     = obtener_idioma(context, update)
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             await client.post(
@@ -378,24 +325,23 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logging.warning(f"No se pudo limpiar historial en API: {e}")
 
     context.user_data.clear()
+    context.user_data["idioma"] = idioma
     ultimos_lugares.pop(usuario_id, None)
-    await update.message.reply_text(
-        "🔄 Conversación reiniciada. ¡Hola de nuevo!\n"
-        "¿En qué puedo ayudarte hoy? 🇨🇺"
-    )
+    await update.message.reply_text(t("reset_confirmacion", idioma))
 
 
 async def manejar_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Recibe ubicación GPS compartida desde Telegram."""
     ubicacion  = update.message.location
     usuario_id = str(update.message.from_user.id)
+    idioma     = obtener_idioma(context, update)
     lat        = ubicacion.latitude
     lng        = ubicacion.longitude
 
     context.user_data["lat"] = lat
     context.user_data["lng"] = lng
 
-    await update.message.reply_text("📡 Ubicación recibida. Buscando lugares cercanos...")
+    await update.message.reply_text(t("ubicacion_recibida", idioma))
 
     try:
         async with httpx.AsyncClient(timeout=30) as client:
@@ -413,36 +359,31 @@ async def manejar_ubicacion(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if tiene_datos:
             await update.message.reply_text(data["respuesta"], parse_mode="Markdown")
             for lugar in lugares[:MAX_TARJETAS]:
-                await enviar_tarjeta_lugar(update, lugar)
+                await enviar_tarjeta_lugar(update, lugar, idioma)
             nombres = [l["nombre"] for l in lugares]
             teclado = InlineKeyboardMarkup([
                 [InlineKeyboardButton(
-                    f"🗺️ KML ({len(nombres)} lugares)",
+                    t("boton_kml_n", idioma, n=len(nombres)),
                     callback_data=f"map|{guardar_callback('kml', nombres)}"
                 )],
                 [InlineKeyboardButton(
-                    f"📍 GPX ({len(nombres)} lugares)",
+                    t("boton_gpx_n", idioma, n=len(nombres)),
                     callback_data=f"map|{guardar_callback('gpx', nombres)}"
                 )]
             ])
             await update.message.reply_text(
-                "¿Quieres el mapa para navegar sin internet?",
+                t("pregunta_mapa_offline", idioma),
                 reply_markup=teclado
             )
         else:
-            await update.message.reply_text(
-                "📭 No tengo datos de tu zona en mi base de datos.\n"
-                "🔍 Buscando lugares cercanos en internet..."
-            )
-            await mostrar_resultados_externos(update, lat, lng)
+            await update.message.reply_text(t("sin_datos_zona", idioma))
+            await mostrar_resultados_externos(update, lat, lng, idioma=idioma)
 
     except httpx.ConnectError:
-        await update.message.reply_text(
-            "⚠️ No puedo conectarme al servidor. Asegúrate de que la API está corriendo."
-        )
+        await update.message.reply_text(t("error_conexion_api", idioma))
         logging.error("API no disponible en manejar_ubicacion")
     except Exception as e:
-        await update.message.reply_text("Error buscando lugares cercanos. Intenta de nuevo.")
+        await update.message.reply_text(t("error_cercanos", idioma))
         logging.error(f"Error cercanos GPS: {e}")
 
 
@@ -452,9 +393,8 @@ async def responder(update: Update, context: ContextTypes.DEFAULT_TYPE):
     usuario_id = str(update.message.from_user.id)
 
     if not _check_rate_limit(usuario_id):
-        await update.message.reply_text(
-            "⏱️ Demasiadas consultas seguidas. Espera un momento e intenta de nuevo."
-        )
+        idioma = obtener_idioma(context, update)
+        await update.message.reply_text(t("rate_limit", idioma))
         return
 
     await procesar_pregunta(update, context, pregunta, usuario_id)
@@ -464,6 +404,7 @@ async def procesar_pregunta(update: Update, context: ContextTypes.DEFAULT_TYPE,
                              pregunta: str, usuario_id: str):
     """Detecta cercanía o responde con RAG + historial."""
     logging.info(f">>> MENSAJE: '{pregunta}' de usuario {usuario_id}")
+    idioma = obtener_idioma(context, update)
 
     palabras_cercania = [
         "cerca", "cercano", "próximo", "nearby", "close to", "close by",
@@ -511,38 +452,32 @@ async def procesar_pregunta(update: Update, context: ContextTypes.DEFAULT_TYPE,
             if tiene_datos:
                 await update.message.reply_text(data["respuesta"], parse_mode="Markdown")
                 for lugar in lugares[:MAX_TARJETAS]:
-                    await enviar_tarjeta_lugar(update, lugar)
+                    await enviar_tarjeta_lugar(update, lugar, idioma)
                 nombres = [l["nombre"] for l in lugares]
                 teclado = InlineKeyboardMarkup([
                     [InlineKeyboardButton(
-                        f"🗺️ KML ({len(nombres)} lugares)",
+                        t("boton_kml_n", idioma, n=len(nombres)),
                         callback_data=f"map|{guardar_callback('kml', nombres)}"
                     )],
                     [InlineKeyboardButton(
-                        f"📍 GPX ({len(nombres)} lugares)",
+                        t("boton_gpx_n", idioma, n=len(nombres)),
                         callback_data=f"map|{guardar_callback('gpx', nombres)}"
                     )]
                 ])
                 await update.message.reply_text(
-                    "¿Quieres el mapa para navegar sin internet?",
+                    t("pregunta_mapa_offline", idioma),
                     reply_markup=teclado
                 )
             else:
-                await update.message.reply_text(
-                    "📭 No tengo datos de esa zona en mi base de datos.\n"
-                    "🔍 Buscando en internet..."
-                )
+                await update.message.reply_text(t("sin_datos_zona_pregunta", idioma))
                 if lat_ctx and lng_ctx:
-                    await mostrar_resultados_externos(update, lat_ctx, lng_ctx)
+                    await mostrar_resultados_externos(update, lat_ctx, lng_ctx, idioma=idioma)
                 else:
-                    await update.message.reply_text(
-                        "Para buscar en internet comparte tu ubicación GPS "
-                        "con el botón 📎 → Ubicación."
-                    )
+                    await update.message.reply_text(t("compartir_ubicacion_para_buscar", idioma))
 
         else:
             # ── Flujo RAG con historial ──
-            payload = {"texto": pregunta, "usuario_id": usuario_id}
+            payload = {"texto": pregunta, "usuario_id": usuario_id, "idioma": IDIOMAS[idioma]["nombre"]}
             lat_ctx = context.user_data.get("lat")
             lng_ctx = context.user_data.get("lng")
             if lat_ctx and lng_ctx:
@@ -573,7 +508,7 @@ async def procesar_pregunta(update: Update, context: ContextTypes.DEFAULT_TYPE,
                     datos = await buscar_datos_lugar(nombre_candidato)
                     if datos and datos.get("lat"):
                         lugares_con_db.append(datos)
-                        await enviar_tarjeta_lugar(update, datos)
+                        await enviar_tarjeta_lugar(update, datos, idioma)
                         if len(lugares_con_db) >= MAX_TARJETAS:
                             break
 
@@ -581,32 +516,27 @@ async def procesar_pregunta(update: Update, context: ContextTypes.DEFAULT_TYPE,
                     nombres_mapa = [l["nombre"] for l in lugares_con_db]
                     teclado = InlineKeyboardMarkup([[
                         InlineKeyboardButton(
-                            f"🗺️ KML ({len(nombres_mapa)} lugares)",
+                            t("boton_kml_n", idioma, n=len(nombres_mapa)),
                             callback_data=f"map|{guardar_callback('kml', nombres_mapa)}"
                         ),
                         InlineKeyboardButton(
-                            f"📍 GPX ({len(nombres_mapa)} lugares)",
+                            t("boton_gpx_n", idioma, n=len(nombres_mapa)),
                             callback_data=f"map|{guardar_callback('gpx', nombres_mapa)}"
                         )
                     ]])
                     await update.message.reply_text(
-                        f"🗺️ ¿Quieres un mapa con los *{len(nombres_mapa)} lugares* mencionados?",
+                        t("pregunta_mapa_multi", idioma, n=len(nombres_mapa)),
                         parse_mode="Markdown",
                         reply_markup=teclado
                     )
 
     except httpx.ConnectError:
         stop_typing.set()
-        await update.message.reply_text(
-            "⚠️ No puedo conectarme al servidor. ¿Está la API corriendo?\n"
-            "Intenta de nuevo en unos momentos."
-        )
+        await update.message.reply_text(t("error_conexion_api_largo", idioma))
         logging.error("API no disponible en procesar_pregunta")
     except httpx.TimeoutException:
         stop_typing.set()
-        await update.message.reply_text(
-            "⏳ La consulta tardó demasiado. Por favor intenta de nuevo."
-        )
+        await update.message.reply_text(t("timeout", idioma))
         logging.error("Timeout en procesar_pregunta")
     except httpx.HTTPStatusError as e:
         stop_typing.set()
@@ -617,18 +547,12 @@ async def procesar_pregunta(update: Update, context: ContextTypes.DEFAULT_TYPE,
             pass
         logging.error(f"Error API {e.response.status_code}: {detalle}")
         if e.response.status_code == 429:
-            await update.message.reply_text(
-                detalle or "⏱️ Hemos alcanzado el límite de consultas. Espera un momento e intenta de nuevo."
-            )
+            await update.message.reply_text(t("limite_groq", idioma))
         else:
-            await update.message.reply_text(
-                "Lo siento, ocurrió un error en el servidor. Por favor intenta de nuevo."
-            )
+            await update.message.reply_text(t("error_servidor", idioma))
     except Exception as e:
         stop_typing.set()
-        await update.message.reply_text(
-            "Lo siento, ocurrió un error inesperado. Por favor intenta de nuevo."
-        )
+        await update.message.reply_text(t("error_inesperado", idioma))
         logging.error(f"Error en procesar_pregunta: {e}")
     finally:
         stop_typing.set()
@@ -638,14 +562,13 @@ async def procesar_pregunta(update: Update, context: ContextTypes.DEFAULT_TYPE,
 async def manejar_voz(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Transcribe notas de voz con Groq Whisper y las procesa como texto (F5)."""
     usuario_id = str(update.message.from_user.id)
+    idioma     = obtener_idioma(context, update)
 
     if not _check_rate_limit(usuario_id):
-        await update.message.reply_text(
-            "⏱️ Demasiadas consultas seguidas. Espera un momento e intenta de nuevo."
-        )
+        await update.message.reply_text(t("rate_limit", idioma))
         return
 
-    await update.message.reply_text("🎙️ Transcribiendo audio...")
+    await update.message.reply_text(t("transcribiendo", idioma))
 
     try:
         voz         = update.message.voice or update.message.audio
@@ -662,33 +585,27 @@ async def manejar_voz(update: Update, context: ContextTypes.DEFAULT_TYPE):
             texto = resp.json().get("texto", "").strip()
 
         if not texto:
-            await update.message.reply_text(
-                "No pude entender el audio. Intenta de nuevo o escribe tu pregunta."
-            )
+            await update.message.reply_text(t("audio_no_entendido", idioma))
             return
 
-        await update.message.reply_text(f"🎙️ _Escuché:_ \"{texto}\"", parse_mode="Markdown")
+        await update.message.reply_text(t("escuche", idioma, texto=texto), parse_mode="Markdown")
         await procesar_pregunta(update, context, texto, usuario_id)
 
     except httpx.ConnectError:
-        await update.message.reply_text(
-            "⚠️ No puedo conectarme al servidor. Asegúrate de que la API está corriendo."
-        )
+        await update.message.reply_text(t("error_conexion_api", idioma))
         logging.error("API no disponible en manejar_voz")
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 429:
-            await update.message.reply_text(
-                "⏱️ Hemos alcanzado el límite de transcripciones. Intenta de nuevo en unos momentos."
-            )
+            await update.message.reply_text(t("limite_transcripcion", idioma))
         else:
-            await update.message.reply_text("No pude procesar el audio. Intenta de nuevo.")
+            await update.message.reply_text(t("error_audio", idioma))
         logging.error(f"Error transcribiendo voz: {e}")
     except Exception as e:
-        await update.message.reply_text("No pude procesar el audio. Intenta de nuevo.")
+        await update.message.reply_text(t("error_audio", idioma))
         logging.error(f"Error transcribiendo voz: {e}")
 
 
-async def enviar_tarjeta_lugar(update: Update, lugar: dict):
+async def enviar_tarjeta_lugar(update: Update, lugar: dict, idioma: str = IDIOMA_DEFAULT):
     """Envía imagen + caption + botones: web, Google Maps y mapas offline."""
     nombre    = lugar.get("nombre", "")
     thumbnail = lugar.get("thumbnail", "")
@@ -702,13 +619,13 @@ async def enviar_tarjeta_lugar(update: Update, lugar: dict):
 
     botones = []
     if website:
-        botones.append([InlineKeyboardButton("🌐 Sitio web oficial", url=website)])
+        botones.append([InlineKeyboardButton(t("boton_sitio_web", idioma), url=website)])
     if lat and lng:
         gmaps_url = f"https://maps.google.com/?q={lat},{lng}"
-        botones.append([InlineKeyboardButton("📍 Ver en Google Maps", url=gmaps_url)])
+        botones.append([InlineKeyboardButton(t("boton_google_maps", idioma), url=gmaps_url)])
     botones.append([
-        InlineKeyboardButton("🗺️ KML offline", callback_data=f"map|{guardar_callback('kml', [nombre])}"),
-        InlineKeyboardButton("📍 GPX offline", callback_data=f"map|{guardar_callback('gpx', [nombre])}")
+        InlineKeyboardButton(t("boton_kml_offline", idioma), callback_data=f"map|{guardar_callback('kml', [nombre])}"),
+        InlineKeyboardButton(t("boton_gpx_offline", idioma), callback_data=f"map|{guardar_callback('gpx', [nombre])}")
     ])
 
     teclado = InlineKeyboardMarkup(botones)
@@ -734,12 +651,25 @@ async def manejar_botones(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     usuario_id = str(query.from_user.id)
+    idioma     = obtener_idioma(context, update)
     datos      = query.data.split("|")
+
+    if datos[0] == "idioma" and len(datos) >= 2:
+        nuevo_idioma = datos[1]
+        if nuevo_idioma not in IDIOMAS:
+            return
+        context.user_data["idioma"] = nuevo_idioma
+        info = IDIOMAS[nuevo_idioma]
+        await query.message.reply_text(
+            t("idioma_cambiado", nuevo_idioma, nombre=info["nombre"], bandera=info["bandera"]),
+            parse_mode="Markdown"
+        )
+        return
 
     if datos[0] == "ampliar" and len(datos) >= 3:
         lat, lng = float(datos[1]), float(datos[2])
-        await query.message.reply_text("🔍 Ampliando búsqueda a 3 km...")
-        await mostrar_resultados_externos(update, lat, lng, radio_m=3000)
+        await query.message.reply_text(t("ampliando_radio", idioma))
+        await mostrar_resultados_externos(update, lat, lng, radio_m=3000, idioma=idioma)
         return
 
     if datos[0] == "map" and len(datos) > 1:
@@ -751,25 +681,18 @@ async def manejar_botones(update: Update, context: ContextTypes.DEFAULT_TYPE):
         tipo_callback = "db"
         stored        = {"nombres": [datos[1]] if len(datos) > 1 else [ultimos_lugares.get(usuario_id, "")]}
 
-    instrucciones = (
-        "📱 *Cómo usar en OsmAnd / Maps.me:*\n"
-        "1. Descarga el archivo\n"
-        "2. Abre OsmAnd o Maps.me\n"
-        "3. Menú → Mis lugares → Importar\n"
-        "4. Selecciona el archivo\n"
-        "5. ¡Navega sin internet! 🗺️"
-    )
+    instrucciones = t("instrucciones_offline", idioma)
 
     try:
         if tipo_callback == "externo":
             lugares_ext = stored.get("lugares", [])
             if not lugares_ext:
-                await query.message.reply_text("No hay datos para generar el mapa.")
+                await query.message.reply_text(t("sin_datos_mapa", idioma))
                 return
 
-            label = f"{len(lugares_ext)} lugares"
+            label = t("n_lugares", idioma, n=len(lugares_ext))
             await query.message.reply_text(
-                f"⏳ Generando {formato_real.upper()} para *{label}*...",
+                t("generando_mapa", idioma, formato=formato_real.upper(), label=label),
                 parse_mode="Markdown"
             )
 
@@ -790,19 +713,19 @@ async def manejar_botones(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     parse_mode="Markdown"
                 )
             else:
-                await query.message.reply_text("Error generando el mapa externo. Intenta de nuevo.")
+                await query.message.reply_text(t("error_mapa_externo", idioma))
 
         else:
             nombres = stored.get("nombres", [])
             nombres = [n.strip() for n in nombres if n.strip()]
 
             if not nombres:
-                await query.message.reply_text("No pude identificar el lugar. Pregunta de nuevo.")
+                await query.message.reply_text(t("lugar_no_identificado", idioma))
                 return
 
-            label = nombres[0] if len(nombres) == 1 else f"{len(nombres)} lugares"
+            label = nombres[0] if len(nombres) == 1 else t("n_lugares", idioma, n=len(nombres))
             await query.message.reply_text(
-                f"⏳ Generando {formato_real.upper()} para *{label}*...",
+                t("generando_mapa", idioma, formato=formato_real.upper(), label=label),
                 parse_mode="Markdown"
             )
 
@@ -828,14 +751,26 @@ async def manejar_botones(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 )
             else:
                 await query.message.reply_text(
-                    f"No encontré coordenadas GPS para *{label}*.\n"
-                    "Estos lugares pueden no tener datos de ubicación en nuestra base de datos.",
+                    t("sin_coordenadas", idioma, label=label),
                     parse_mode="Markdown"
                 )
 
     except Exception as e:
-        await query.message.reply_text("Error generando el archivo. Intenta de nuevo.")
+        await query.message.reply_text(t("error_archivo", idioma))
         logging.error(f"Error mapa {formato_real}: {e}")
+
+
+async def idioma_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Muestra un selector de idioma."""
+    idioma  = obtener_idioma(context, update)
+    botones = [
+        [InlineKeyboardButton(f"{info['bandera']} {info['nombre']}", callback_data=f"idioma|{codigo}")]
+        for codigo, info in IDIOMAS.items()
+    ]
+    await update.message.reply_text(
+        t("elegir_idioma", idioma),
+        reply_markup=InlineKeyboardMarkup(botones)
+    )
 
 
 # ──────────────────────────────────────────────────────────
@@ -855,6 +790,7 @@ def main():
     app.add_handler(CommandHandler("help",       ayuda))
     app.add_handler(CommandHandler("reset",      reset))
     app.add_handler(CommandHandler("emergencia", emergencia))
+    app.add_handler(CommandHandler("idioma",     idioma_cmd))
     app.add_handler(MessageHandler(filters.LOCATION, manejar_ubicacion))
     app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, manejar_voz))
     app.add_handler(CallbackQueryHandler(manejar_botones))

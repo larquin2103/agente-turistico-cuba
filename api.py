@@ -38,6 +38,11 @@ SIEMPRE en ese mismo idioma. Sin excepciones.
 - Mensaje en español → responde en español
 Nunca respondas en un idioma diferente al que usó el usuario.
 
+Si el contexto incluye una línea "[Idioma preferido del usuario: X]", esa
+preferencia tiene PRIORIDAD ABSOLUTA sobre la detección automática: responde
+siempre en el idioma X, incluso si el mensaje del usuario está escrito en
+otro idioma.
+
 FORMATO OBLIGATORIO: Cuando menciones el nombre de un lugar (restaurante, museo, hotel,
 parque, etc.), SIEMPRE escríbelo en negritas Markdown: **Nombre del Lugar**.
 Esto es obligatorio para todos los nombres propios de lugares. Ejemplo:
@@ -119,6 +124,7 @@ class Pregunta(BaseModel):
     usuario_id: str = "anonimo"
     lat: float = None
     lng: float = None
+    idioma: str = None
 
 class ResetRequest(BaseModel):
     usuario_id: str
@@ -236,6 +242,8 @@ async def chat(pregunta: Pregunta, x_api_key: str = Header(...)):
         contexto = f"[Hora actual: {ahora}]"
         if pregunta.lat is not None and pregunta.lng is not None:
             contexto += f"\n[Ubicación GPS actual del usuario: {pregunta.lat}, {pregunta.lng}]"
+        if pregunta.idioma:
+            contexto += f"\n[Idioma preferido del usuario: {pregunta.idioma}]"
         texto = f"{contexto}\n{pregunta.texto}"
 
         try:
