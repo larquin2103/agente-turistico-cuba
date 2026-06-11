@@ -55,6 +55,7 @@ bot.py  ────────── httpx async ─────────�
 | `generador_mapas.py` | Generación KML/GPX compatibles con OsmAnd/Garmin/Google Earth |
 | `media.py` | Resolución de imágenes: thumbnail → Wikipedia → Unsplash fallback |
 | `cargar_datos.py` | Carga JSONs de Google Maps (SerpAPI) a ChromaDB, deduplica por `place_id` |
+| `idiomas.py` | Localización del bot — textos de interfaz y etiquetas de tipo en 6 idiomas |
 | `diagnostico.py` | Muestra documentos indexados en ChromaDB — solo lectura, seguro |
 | `test_rag.py` | Pruebas del pipeline RAG — no requiere Telegram |
 
@@ -121,7 +122,7 @@ Todos los endpoints excepto `GET /` requieren el header `x-api-key` con el valor
 | Método | Ruta | Descripción |
 |---|---|---|
 | `GET` | `/` | Estado: modelo, embeddings, lugares en DB, usuarios activos |
-| `POST` | `/chat` | Chat RAG con historial por `usuario_id`, con contexto de fecha/hora y GPS |
+| `POST` | `/chat` | Chat RAG con historial por `usuario_id`, con contexto de fecha/hora, GPS e idioma preferido |
 | `POST` | `/reset` | Borrar historial de un `usuario_id` |
 | `POST` | `/buscar_lugar` | Exact match → fuzzy → vectorial semántico |
 | `POST` | `/cercanos` | Lugares cercanos (GPS o nombre de barrio), con filtro opcional de categoría |
@@ -187,9 +188,23 @@ await query.message.reply_document(document=buf, ...)
 
 `procesar_pregunta()` en `bot.py` (compartida por `responder()` y `manejar_voz()`) llama `buscar_datos_lugar()` —ahora async, vía `/buscar_lugar`— para los primeros `MAX_TARJETAS * 2 = 6` nombres detectados en la respuesta del LLM y envía tarjeta para los primeros 3 que tengan coordenadas GPS. Si hay más de 1, ofrece un mapa combinado (`/mapa/kml_multi` y `/mapa/gpx_multi`). El mismo patrón de hasta 3 tarjetas + mapa combinado se usa en `manejar_ubicacion()` y en el flujo de cercanía por texto, con todos los lugares devueltos por `/cercanos`.
 
-### Inyección de contexto — fecha/hora y GPS
+### Inyección de contexto — fecha/hora, GPS e idioma
 
-`/chat` en `api.py` antepone `[Hora actual: martes 29/05/2026 14:30]` al texto del usuario antes de enviarlo al LLM. Si `bot.py` tiene `lat`/`lng` guardados en `context.user_data` (de un mensaje de ubicación previo), se añaden también como `[Ubicación GPS actual del usuario: lat, lng]`. Así el LLM responde con conciencia temporal y espacial.
+`/chat` en `api.py` antepone `[Hora actual: martes 29/05/2026 14:30]` al texto del usuario antes de enviarlo al LLM. Si `bot.py` tiene `lat`/`lng` guardados en `context.user_data` (de un mensaje de ubicación previo), se añaden también como `[Ubicación GPS actual del usuario: lat, lng]`. Si `pregunta.idioma` está presente, se añade `[Idioma preferido del usuario: X]`, que el `SYSTEM_PROMPT` trata con prioridad absoluta sobre la detección automática del idioma del mensaje. Así el LLM responde con conciencia temporal, espacial e idiomática.
+
+### Localización — `idiomas.py` y comando `/idioma`
+
+`idiomas.py` centraliza los textos de interfaz de `bot.py` en 6 idiomas (es/en/it/fr/de/pt):
+
+- `IDIOMAS` — diccionario `{código: {"nombre": ..., "bandera": ...}}`
+- `IDIOMA_DEFAULT = "es"`
+- `idioma_desde_codigo(codigo)` — normaliza un código BCP47 de Telegram (ej. `"en-US"`) al idioma soportado más cercano, con fallback a `IDIOMA_DEFAULT`
+- `t(clave, idioma, **kwargs)` — devuelve el texto traducido para `clave`, con `.format(**kwargs)` para placeholders (`{n}`, `{url}`, `{label}`, etc.) y fallback a español si falta la traducción
+- `tipo_label(tipo, idioma)` — traduce los tipos de lugar de OpenStreetMap (restaurant, museum, hotel, etc.)
+
+`obtener_idioma(context, update)` en `bot.py` devuelve `context.user_data["idioma"]` si ya existe; si no, lo detecta de `update.effective_user.language_code` y lo guarda. El comando `/idioma` (`idioma_cmd()`) muestra un teclado inline con las 6 banderas; `manejar_botones()` maneja `callback_data="idioma|<código>"`, guarda la preferencia y confirma en el nuevo idioma. `/reset` preserva `context.user_data["idioma"]` aunque haga `context.user_data.clear()`.
+
+En el flujo RAG, `procesar_pregunta()` envía `payload["idioma"] = IDIOMAS[idioma]["nombre"]` (nombre completo, ej. `"English"`) a `/chat`, reforzando la regla de idioma del `SYSTEM_PROMPT`.
 
 ### Detección de nombres de lugares
 
@@ -245,8 +260,10 @@ El `SYSTEM_PROMPT` de `api.py` prohíbe explícitamente inventar nombres, direcc
 1. Usuario escribe pregunta → `responder()` (valida rate limit) → `procesar_pregunta()`
 2. Detección de keywords de cercanía en los 6 idiomas soportados ("cerca", "nearby", "più vicino", "près", "in der nähe", "perto", "estoy en", "mi ubicación", etc.)
 3. Si es cercanía: usa coords guardadas en `context.user_data` o texto de ubicación, detecta categoría con `detectar_categoria()` → `/cercanos` → hasta 3 tarjetas + mapa combinado
-4. Si es RAG: llama `/chat` (con hora actual y GPS si están disponibles) → LLM responde con negritas en nombres → `detectar_lugares()` → hasta 3 tarjetas con foto, datos, botones Google Maps + KML/GPX, y mapa combinado si hay más de 1
+4. Si es RAG: llama `/chat` (con hora actual, GPS e idioma preferido si están disponibles) → LLM responde con negritas en nombres → `detectar_lugares()` → hasta 3 tarjetas con foto, datos, botones Google Maps + KML/GPX, y mapa combinado si hay más de 1
 5. Las notas de voz (`manejar_voz()`) se transcriben vía `/transcribir` (Groq Whisper) y siguen el mismo flujo que un mensaje de texto
+
+Todos los textos de la interfaz (botones, mensajes de error, ayuda, emergencia) se obtienen vía `t()` de `idiomas.py` según `obtener_idioma(context, update)`. El usuario puede cambiar su idioma en cualquier momento con `/idioma`.
 
 ---
 
