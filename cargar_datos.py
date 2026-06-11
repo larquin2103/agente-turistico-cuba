@@ -73,7 +73,18 @@ def construir_metadata(lugar: dict) -> dict:
         "lng":       str(lugar.get("gps_coordinates", {}).get("longitude", "")),
     }
 
-def cargar_json(ruta_archivo: str):
+def obtener_place_ids_existentes() -> set:
+    """Devuelve el conjunto de place_id ya indexados en ChromaDB."""
+    try:
+        existentes = chroma_collection.get()
+        return {
+            m.get("place_id", "") for m in existentes.get("metadatas", [])
+            if m and m.get("place_id")
+        }
+    except Exception:
+        return set()
+
+def cargar_json(ruta_archivo: str, place_ids_existentes: set = None):
     with open(ruta_archivo, "r", encoding="utf-8") as f:
         data = json.load(f)
 
@@ -86,8 +97,17 @@ def cargar_json(ruta_archivo: str):
     print(f"Ubicación: {location}")
     print(f"Lugares encontrados: {len(lugares)}")
 
+    if place_ids_existentes is None:
+        place_ids_existentes = obtener_place_ids_existentes()
+
     documentos = []
+    omitidos = 0
     for lugar in lugares:
+        place_id = lugar.get("place_id", "")
+        if place_id and place_id in place_ids_existentes:
+            omitidos += 1
+            continue
+
         lugar["_query"] = query
         texto = construir_texto(lugar)
         if texto.strip():
@@ -96,6 +116,11 @@ def cargar_json(ruta_archivo: str):
                 metadata=construir_metadata(lugar)
             )
             documentos.append(doc)
+            if place_id:
+                place_ids_existentes.add(place_id)
+
+    if omitidos:
+        print(f"Omitidos {omitidos} lugares duplicados (ya indexados por place_id)")
 
     if documentos:
         print(f"Indexando {len(documentos)} lugares...")
@@ -105,7 +130,7 @@ def cargar_json(ruta_archivo: str):
         )
         print(f"✓ {len(documentos)} lugares indexados correctamente")
     else:
-        print("No se encontraron lugares válidos en este archivo")
+        print("No se encontraron lugares nuevos para indexar en este archivo")
 
     return len(documentos)
 
@@ -120,10 +145,11 @@ def cargar_carpeta(ruta_carpeta: str):
         return
 
     print(f"Encontrados {len(archivos)} archivos JSON")
+    place_ids_existentes = obtener_place_ids_existentes()
     total = 0
     for archivo in archivos:
         ruta = os.path.join(ruta_carpeta, archivo)
-        total += cargar_json(ruta)
+        total += cargar_json(ruta, place_ids_existentes)
 
     print(f"\n✓ TOTAL: {total} lugares indexados en ChromaDB")
 

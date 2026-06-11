@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, File, Header, HTTPException, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel
 import asyncio
@@ -48,7 +48,14 @@ Usa únicamente la información del contexto proporcionado.
 Incluye nombre, dirección, teléfono, calificación y horarios cuando estén disponibles.
 Cuando no tengas información exacta de horarios o precios, indícalo claramente
 y sugiere confirmar directamente con el lugar.
-Recuerda el historial de la conversación para responder preguntas de seguimiento."""
+Recuerda el historial de la conversación para responder preguntas de seguimiento.
+
+REGLA ANTI-ALUCINACIÓN: NUNCA inventes nombres de lugares, direcciones, teléfonos,
+horarios, precios ni coordenadas que no aparezcan en el contexto proporcionado.
+Si el contexto no contiene lugares relevantes para la pregunta, dilo claramente
+("No tengo información sobre eso en mi base de datos") en lugar de improvisar
+una recomendación. Es preferible admitir que no tienes el dato a darlo por
+inventado."""
 
 Settings.llm = Groq(
     model=GROQ_MODEL,
@@ -73,7 +80,8 @@ def get_chat_engine(user_id: str):
         user_chat_engines[user_id] = index.as_chat_engine(
             chat_mode="context",
             verbose=False,
-            system_prompt=SYSTEM_PROMPT
+            system_prompt=SYSTEM_PROMPT,
+            similarity_top_k=5
         )
     user_engine_last_used[user_id] = datetime.now()
     return user_chat_engines[user_id]
@@ -109,6 +117,8 @@ app = FastAPI(title="Agente Turístico Cuba API", lifespan=lifespan)
 class Pregunta(BaseModel):
     texto: str
     usuario_id: str = "anonimo"
+    lat: float = None
+    lng: float = None
 
 class ResetRequest(BaseModel):
     usuario_id: str
@@ -117,11 +127,15 @@ class SolicitudMapa(BaseModel):
     place_id: str
     nombre: str
 
+class SolicitudMapaMulti(BaseModel):
+    nombres: list[str]
+
 class SolicitudCercania(BaseModel):
     lat: float = None
     lng: float = None
     texto_ubicacion: str = None
     usuario_id: str = "anonimo"
+    categoria: str = None
 
 class SolicitudBusquedaExterna(BaseModel):
     lat: float
@@ -152,6 +166,49 @@ def _extraer_campo(texto: str, campo: str) -> str:
     return m.group(1).strip() if m else ""
 
 
+UMBRAL_RELEVANCIA = 0.5
+LOG_PREGUNTAS_SIN_DATOS = "preguntas_sin_datos.log"
+
+
+def _log_si_sin_contexto(pregunta: str, respuesta_obj):
+    """Registra preguntas para las que no se encontró contexto relevante (F9)."""
+    try:
+        source_nodes = getattr(respuesta_obj, "source_nodes", None) or []
+        scores = [getattr(n, "score", None) for n in source_nodes]
+        scores = [s for s in scores if s is not None]
+        score_max = max(scores) if scores else 0.0
+
+        if score_max < UMBRAL_RELEVANCIA:
+            with open(LOG_PREGUNTAS_SIN_DATOS, "a", encoding="utf-8") as f:
+                f.write(f"{datetime.now().isoformat()}\tscore={score_max:.3f}\t{pregunta}\n")
+    except Exception as e:
+        logging.warning(f"No se pudo registrar pregunta sin contexto: {e}")
+
+
+def _buscar_documentos(nombres: list[str]) -> list[str]:
+    """Busca el documento de cada nombre (exact match → fuzzy) y devuelve los encontrados."""
+    col         = chroma_client.get_or_create_collection("lugares_turisticos")
+    encontrados = []
+    todos_cache = None
+
+    for nombre in nombres:
+        resultados = col.get(where={"title": nombre})
+        if resultados["documents"]:
+            encontrados.append(resultados["documents"][0])
+            continue
+
+        if todos_cache is None:
+            todos_cache = col.get(limit=500)
+
+        nombre_lower = nombre.lower()
+        for doc in todos_cache["documents"]:
+            if nombre_lower in doc.lower():
+                encontrados.append(doc)
+                break
+
+    return encontrados
+
+
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @app.get("/")
@@ -174,15 +231,33 @@ async def chat(pregunta: Pregunta, x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
         raise HTTPException(status_code=401, detail="API key inválida")
     try:
-        engine = get_chat_engine(pregunta.usuario_id)
-        ahora  = datetime.now().strftime("%A %d/%m/%Y %H:%M")
-        texto  = f"[Hora actual: {ahora}]\n{pregunta.texto}"
-        respuesta = await engine.achat(texto)
+        engine   = get_chat_engine(pregunta.usuario_id)
+        ahora    = datetime.now().strftime("%A %d/%m/%Y %H:%M")
+        contexto = f"[Hora actual: {ahora}]"
+        if pregunta.lat is not None and pregunta.lng is not None:
+            contexto += f"\n[Ubicación GPS actual del usuario: {pregunta.lat}, {pregunta.lng}]"
+        texto = f"{contexto}\n{pregunta.texto}"
+
+        try:
+            respuesta = await engine.achat(texto)
+        except Exception as e:
+            msg = str(e).lower()
+            if "429" in msg or "rate limit" in msg or "rate_limit" in msg:
+                raise HTTPException(
+                    status_code=429,
+                    detail="Hemos alcanzado el límite de consultas al asistente. Por favor espera un momento e intenta de nuevo."
+                )
+            raise
+
+        _log_si_sin_contexto(pregunta.texto, respuesta)
+
         return {
             "pregunta":   pregunta.texto,
             "respuesta":  str(respuesta),
             "usuario_id": pregunta.usuario_id
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -326,6 +401,64 @@ async def descargar_gpx(solicitud: SolicitudMapa, x_api_key: str = Header(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/mapa/kml_multi")
+async def descargar_kml_multi(solicitud: SolicitudMapaMulti, x_api_key: str = Header(...)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="API key inválida")
+    try:
+        textos = await asyncio.to_thread(_buscar_documentos, solicitud.nombres)
+        if not textos:
+            raise HTTPException(status_code=404, detail="Ningún lugar encontrado")
+
+        lugares = []
+        for texto in textos:
+            datos = parsear_documento(texto)
+            lat, lng = extraer_coordenadas(texto)
+            datos["lat"] = lat
+            datos["lng"] = lng
+            lugares.append(datos)
+
+        kml = generar_kml(lugares)
+        return Response(
+            content=kml,
+            media_type="application/vnd.google-earth.kml+xml",
+            headers={"Content-Disposition": "attachment; filename=lugares_turisticos.kml"}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/mapa/gpx_multi")
+async def descargar_gpx_multi(solicitud: SolicitudMapaMulti, x_api_key: str = Header(...)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="API key inválida")
+    try:
+        textos = await asyncio.to_thread(_buscar_documentos, solicitud.nombres)
+        if not textos:
+            raise HTTPException(status_code=404, detail="Ningún lugar encontrado")
+
+        lugares = []
+        for texto in textos:
+            datos = parsear_documento(texto)
+            lat, lng = extraer_coordenadas(texto)
+            datos["lat"] = lat
+            datos["lng"] = lng
+            lugares.append(datos)
+
+        gpx = generar_gpx(lugares)
+        return Response(
+            content=gpx,
+            media_type="application/gpx+xml",
+            headers={"Content-Disposition": "attachment; filename=lugares_turisticos.gpx"}
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/cercanos")
 async def lugares_cercanos_endpoint(solicitud: SolicitudCercania, x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
@@ -347,7 +480,9 @@ async def lugares_cercanos_endpoint(solicitud: SolicitudCercania, x_api_key: str
                 "tiene_datos": False
             }
 
-        lugares = await asyncio.to_thread(lugares_cercanos, lat, lng, DB_PATH, 3)
+        lugares = await asyncio.to_thread(
+            lugares_cercanos, lat, lng, DB_PATH, 3, solicitud.categoria
+        )
 
         DISTANCIA_MAX_KM = 50
         lugares_proximos = [l for l in lugares if l.get("distancia", 999) <= DISTANCIA_MAX_KM]
@@ -468,6 +603,37 @@ async def descargar_gpx_externo(solicitud: SolicitudMapaExterno, x_api_key: str 
             media_type="application/gpx+xml",
             headers={"Content-Disposition": "attachment; filename=lugares_cercanos.gpx"}
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/transcribir")
+async def transcribir_audio(audio: UploadFile = File(...), x_api_key: str = Header(...)):
+    """Transcribe una nota de voz usando Groq Whisper (gratuito con la misma API key)."""
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=401, detail="API key inválida")
+    try:
+        contenido = await audio.read()
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                "https://api.groq.com/openai/v1/audio/transcriptions",
+                headers={"Authorization": f"Bearer {GROQ_KEY}"},
+                files={"file": (audio.filename or "audio.ogg", contenido,
+                                 audio.content_type or "audio/ogg")},
+                data={"model": "whisper-large-v3-turbo"}
+            )
+            resp.raise_for_status()
+            data = resp.json()
+
+        return {"texto": data.get("text", "").strip()}
+
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 429:
+            raise HTTPException(
+                status_code=429,
+                detail="Hemos alcanzado el límite de transcripciones. Intenta de nuevo en unos momentos."
+            )
+        raise HTTPException(status_code=502, detail=f"Error transcribiendo audio: {e.response.text}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
