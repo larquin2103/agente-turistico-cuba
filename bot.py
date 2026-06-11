@@ -287,13 +287,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         one_time_keyboard=False
     )
     await update.message.reply_text(
-        "🇨🇺 *Cuba Travel Guide*\n\n"
-        "🇪🇸 Hola, soy tu guía turístico de Cuba. ¡Pregúntame en español!\n"
-        "🇬🇧 Hi, I'm your Cuba travel guide. Ask me anything in English!\n"
-        "🇮🇹 Ciao, sono la tua guida turistica di Cuba. Chiedimi in italiano!\n"
-        "🇫🇷 Bonjour, je suis votre guide touristique de Cuba. Posez vos questions en français!\n"
-        "🇩🇪 Hallo, ich bin dein Reiseführer für Kuba. Frag mich auf Deutsch!\n"
-        "🇧🇷 Olá, sou seu guia turístico de Cuba. Pergunte em português!\n\n"
+        "🇨🇺 *Cuba Travel Guide* 🌴\n\n"
+        "🇪🇸 ¡Bienvenido a Cuba! Qué alegría tenerte por aquí. Soy tu guía personal: "
+        "pregúntame dónde comer, qué visitar o cómo moverte, y te acompaño en todo tu viaje. 😊\n\n"
+        "🇬🇧 Welcome to Cuba! So happy you're here. I'm your personal guide — ask me "
+        "where to eat, what to see or how to get around, and I'll be with you all along your trip. 😊\n\n"
+        "🇮🇹 Benvenuto a Cuba! Che gioia averti qui. Sono la tua guida personale: chiedimi "
+        "dove mangiare, cosa visitare o come spostarti, ti accompagno per tutto il viaggio. 😊\n\n"
+        "🇫🇷 Bienvenue à Cuba ! Quel plaisir de t'avoir ici. Je suis ton guide personnel : "
+        "demande-moi où manger, quoi visiter ou comment te déplacer, je t'accompagne tout au long du voyage. 😊\n\n"
+        "🇩🇪 Willkommen in Kuba! Schön, dass du hier bist. Ich bin dein persönlicher Guide — "
+        "frag mich, wo man isst, was man besichtigt oder wie man sich fortbewegt. Ich begleite dich auf deiner ganzen Reise. 😊\n\n"
+        "🇧🇷 Bem-vindo a Cuba! Que alegria ter você aqui. Sou seu guia pessoal: pergunte "
+        "onde comer, o que visitar ou como se locomover, e eu te acompanho durante toda a viagem. 😊\n\n"
         + t("start_pie", idioma),
         parse_mode="Markdown",
         reply_markup=teclado

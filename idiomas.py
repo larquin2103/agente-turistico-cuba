@@ -51,40 +51,40 @@ TEXTOS = {
     },
     "start_pie": {
         "es": (
-            "📍 Comparte tu ubicación para encontrar lugares cercanos\n"
-            "❓ /ayuda — qué puedo hacer\n"
-            "🆘 /emergencia — números de urgencia en Cuba\n"
-            "🌐 /idioma — cambiar idioma"
+            "📍 Comparte tu ubicación y te muestro lo mejor que tienes cerca\n"
+            "❓ /ayuda — todo lo que puedo hacer por ti\n"
+            "🆘 /emergencia — números de urgencia en Cuba, por si los necesitas\n"
+            "🌐 /idioma — elige tu idioma preferido"
         ),
         "en": (
-            "📍 Share your location to find nearby places\n"
-            "❓ /ayuda — what I can do\n"
-            "🆘 /emergencia — emergency numbers in Cuba\n"
-            "🌐 /idioma — change language"
+            "📍 Share your location and I'll show you the best places near you\n"
+            "❓ /ayuda — everything I can do for you\n"
+            "🆘 /emergencia — emergency numbers in Cuba, just in case\n"
+            "🌐 /idioma — choose your preferred language"
         ),
         "it": (
-            "📍 Condividi la tua posizione per trovare luoghi vicini\n"
-            "❓ /ayuda — cosa posso fare\n"
-            "🆘 /emergencia — numeri di emergenza a Cuba\n"
-            "🌐 /idioma — cambia lingua"
+            "📍 Condividi la tua posizione e ti mostro il meglio vicino a te\n"
+            "❓ /ayuda — tutto quello che posso fare per te\n"
+            "🆘 /emergencia — numeri di emergenza a Cuba, per ogni evenienza\n"
+            "🌐 /idioma — scegli la tua lingua preferita"
         ),
         "fr": (
-            "📍 Partage ta position pour trouver des lieux à proximité\n"
-            "❓ /ayuda — ce que je peux faire\n"
-            "🆘 /emergencia — numéros d'urgence à Cuba\n"
-            "🌐 /idioma — changer de langue"
+            "📍 Partage ta position et je te montre le meilleur autour de toi\n"
+            "❓ /ayuda — tout ce que je peux faire pour toi\n"
+            "🆘 /emergencia — numéros d'urgence à Cuba, au cas où\n"
+            "🌐 /idioma — choisis ta langue préférée"
         ),
         "de": (
-            "📍 Teile deinen Standort, um Orte in der Nähe zu finden\n"
-            "❓ /ayuda — was ich tun kann\n"
-            "🆘 /emergencia — Notfallnummern in Kuba\n"
-            "🌐 /idioma — Sprache ändern"
+            "📍 Teile deinen Standort und ich zeige dir das Beste in deiner Nähe\n"
+            "❓ /ayuda — alles, was ich für dich tun kann\n"
+            "🆘 /emergencia — Notfallnummern in Kuba, nur für den Fall\n"
+            "🌐 /idioma — wähle deine bevorzugte Sprache"
         ),
         "pt": (
-            "📍 Compartilhe sua localização para encontrar lugares próximos\n"
-            "❓ /ayuda — o que posso fazer\n"
-            "🆘 /emergencia — números de emergência em Cuba\n"
-            "🌐 /idioma — mudar idioma"
+            "📍 Compartilhe sua localização e eu mostro o melhor perto de você\n"
+            "❓ /ayuda — tudo o que posso fazer por você\n"
+            "🆘 /emergencia — números de emergência em Cuba, só por precaução\n"
+            "🌐 /idioma — escolha seu idioma preferido"
         ),
     },
 
