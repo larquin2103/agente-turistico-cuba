@@ -485,6 +485,14 @@ TEXTOS = {
         "de": "🗺️ Möchtest du eine Karte mit den *{n} genannten Orten*?",
         "pt": "🗺️ Quer um mapa com os *{n} lugares* mencionados?",
     },
+    "mapa_de_lugar": {
+        "es": "🗺️ Aquí tienes el mapa offline de *{nombre}*. Elige el formato:",
+        "en": "🗺️ Here's the offline map for *{nombre}*. Choose a format:",
+        "it": "🗺️ Ecco la mappa offline di *{nombre}*. Scegli il formato:",
+        "fr": "🗺️ Voici la carte hors ligne de *{nombre}*. Choisis le format :",
+        "de": "🗺️ Hier ist die Offline-Karte für *{nombre}*. Wähle das Format:",
+        "pt": "🗺️ Aqui está o mapa offline de *{nombre}*. Escolha o formato:",
+    },
 
     # ── Errores genéricos ─────────────────────────────────────────────────
     "error_conexion_api": {

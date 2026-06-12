@@ -236,6 +236,12 @@ El `SYSTEM_PROMPT` incluye una "REGLA DE TRANSPARENCIA" que prohíbe al LLM verb
 
 `detectar_categoria()` en `bot.py` mapea palabras clave del usuario (en los 6 idiomas soportados) a un filtro de subcadena sobre el campo "Categoría de búsqueda" de cada documento: p. ej. "restaurante"/"food"/"comida" → `"gastronomia"`, "museo"/"museum" → `"tradi"`, "naturaleza"/"parque" → `"natural"`, "auto"/"rentar"/"alquiler" → `"transpor"`, "hotel"/"alojamiento" → `"servicio"`. El filtro se envía como `categoria` en `/cercanos` y se aplica en `lugares_cercanos()` (`ubicacion.py`).
 
+Las claves de `CATEGORIA_FILTROS` se comparan por **subcadena** (`palabra in texto_lower`), así que algunas entradas son raíces a propósito: `"pranz"` cubre pranzo/pranzare, `"desayun"` cubre desayuno/desayunar, `"cena"` cubre cenar/cenare, `"almoç"` cubre almoço/almoçar. Las comidas (almorzar, lunch, dinner, breakfast, dîner, frühstück, jantar, paladar, etc.) mapean a `"gastronomia"`. Al añadir claves, cuidar falsos positivos por subcadena (p. ej. no usar "eat" porque está dentro de "theater", ni "fame" porque está dentro de "famoso").
+
+### Solicitud de mapas KML/GPX por texto
+
+`detectar_solicitud_mapa()` en `bot.py` detecta "gpx", "kml" u "offline"/"off-line" en el mensaje del usuario. Si hay coincidencia y existe un último lugar en `ultimos_lugares[usuario_id]`, `procesar_pregunta()` responde directamente (sin pasar por el LLM) con los botones de descarga KML/GPX de ese lugar (texto `mapa_de_lugar`, formato solicitado o ambos). Si no hay lugar de referencia, la pregunta sigue al flujo RAG, donde la "REGLA DE MAPAS OFFLINE" del `SYSTEM_PROMPT` impide que el LLM diga "no puedo proporcionar archivos" y le indica orientar al usuario hacia los botones bajo las tarjetas. Este flujo existe porque la deduplicación de tarjetas eliminó el reenvío de tarjetas en seguimientos, que era la vía implícita para volver a obtener los botones de mapa.
+
 ### Regla anti-alucinación
 
 El `SYSTEM_PROMPT` de `api.py` prohíbe explícitamente inventar nombres, direcciones, teléfonos, horarios, precios o coordenadas que no estén en el contexto recuperado. Si no hay contexto relevante para la pregunta, el LLM debe responder "No tengo información sobre eso en mi base de datos" en lugar de improvisar.

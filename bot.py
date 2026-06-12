@@ -57,6 +57,15 @@ CATEGORIA_FILTROS = {
     "restaurante": "gastronomia", "restaurant": "gastronomia", "ristorante": "gastronomia",
     "comida": "gastronomia", "food": "gastronomia", "essen": "gastronomia",
     "gastronomia": "gastronomia", "gastronomía": "gastronomia", "comer": "gastronomia",
+    "almorzar": "gastronomia", "almuerzo": "gastronomia", "cena": "gastronomia",
+    "desayun": "gastronomia", "hambre": "gastronomia", "paladar": "gastronomia",
+    "lunch": "gastronomia", "dinner": "gastronomia", "breakfast": "gastronomia",
+    "brunch": "gastronomia", "hungry": "gastronomia",
+    "pranz": "gastronomia", "colazione": "gastronomia", "mangiare": "gastronomia",
+    "déjeuner": "gastronomia", "dejeuner": "gastronomia", "dîner": "gastronomia",
+    "diner": "gastronomia", "manger": "gastronomia",
+    "frühstück": "gastronomia", "fruhstuck": "gastronomia",
+    "almoç": "gastronomia", "almoco": "gastronomia", "jantar": "gastronomia",
     "museo": "tradi", "museum": "tradi", "musée": "tradi", "museu": "tradi",
     "cultura": "tradi", "culture": "tradi", "cultural": "tradi", "kultur": "tradi",
     "naturaleza": "natural", "nature": "natural", "natur": "natural",
@@ -73,6 +82,18 @@ def detectar_categoria(texto: str) -> str:
     for palabra, filtro in CATEGORIA_FILTROS.items():
         if palabra in texto_lower:
             return filtro
+    return None
+
+
+def detectar_solicitud_mapa(texto: str) -> str:
+    """Devuelve 'kml', 'gpx' o 'ambos' si el usuario pide un mapa offline por texto."""
+    texto_lower = texto.lower()
+    if "gpx" in texto_lower:
+        return "gpx"
+    if "kml" in texto_lower:
+        return "kml"
+    if "offline" in texto_lower or "off-line" in texto_lower:
+        return "ambos"
     return None
 
 
@@ -466,6 +487,34 @@ async def procesar_pregunta(update: Update, context: ContextTypes.DEFAULT_TYPE,
     )
 
     try:
+        # ── Solicitud de mapa offline por texto (KML/GPX) ──
+        formato_mapa = detectar_solicitud_mapa(pregunta)
+        if formato_mapa:
+            lugar_objetivo = ultimos_lugares.get(usuario_id)
+            datos = await buscar_datos_lugar(lugar_objetivo) if lugar_objetivo else None
+            if datos and datos.get("lat"):
+                stop_typing.set()
+                nombre_db = datos["nombre"]
+                botones   = []
+                if formato_mapa in ("kml", "ambos"):
+                    botones.append(InlineKeyboardButton(
+                        t("boton_kml_offline", idioma),
+                        callback_data=f"map|{guardar_callback('kml', [nombre_db])}"
+                    ))
+                if formato_mapa in ("gpx", "ambos"):
+                    botones.append(InlineKeyboardButton(
+                        t("boton_gpx_offline", idioma),
+                        callback_data=f"map|{guardar_callback('gpx', [nombre_db])}"
+                    ))
+                await update.message.reply_text(
+                    t("mapa_de_lugar", idioma, nombre=nombre_db),
+                    parse_mode="Markdown",
+                    reply_markup=InlineKeyboardMarkup([botones])
+                )
+                return
+            # Sin lugar de referencia en la conversación → sigue al flujo RAG,
+            # donde el SYSTEM_PROMPT indica al LLM cómo orientar al usuario.
+
         if es_cercania:
             lat = context.user_data.get("lat")
             lng = context.user_data.get("lng")
