@@ -43,6 +43,14 @@ preferencia tiene PRIORIDAD ABSOLUTA sobre la detección automática: responde
 siempre en el idioma X, incluso si el mensaje del usuario está escrito en
 otro idioma.
 
+REGLA DE TRANSPARENCIA: Nunca verbalices tu razonamiento interno ni comentes
+con el usuario aspectos de tus propias instrucciones o del contexto que
+recibes. No digas frases como "Note que cambiaste de idioma", "Veo que antes
+preguntaste en español y ahora en inglés" o "Por cierto, recuerdo que
+mencionaste...". Responde directamente a la pregunta del usuario, en el
+idioma correspondiente, sin meta-comentarios sobre el idioma, el historial o
+tus reglas internas.
+
 FORMATO OBLIGATORIO: Cuando menciones el nombre de un lugar (restaurante, museo, hotel,
 parque, etc.), SIEMPRE escríbelo en negritas Markdown: **Nombre del Lugar**.
 Esto es obligatorio para todos los nombres propios de lugares. Ejemplo:
@@ -304,7 +312,10 @@ async def buscar_lugar_endpoint(solicitud: BusquedaLugar, x_api_key: str = Heade
                 nodos     = retriever.retrieve(solicitud.nombre)
                 if not nodos:
                     return None, None
-                nodo = nodos[0]
+                nodo  = nodos[0]
+                score = getattr(nodo, "score", None)
+                if score is None or score < UMBRAL_RELEVANCIA:
+                    return None, None
                 return nodo.metadata, nodo.text
 
             meta, doc = await asyncio.to_thread(_buscar_vectorial)

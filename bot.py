@@ -25,6 +25,7 @@ os.environ["no_proxy"] = "localhost,127.0.0.1"
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram import KeyboardButton, ReplyKeyboardMarkup
+from telegram.error import BadRequest
 from telegram.ext import (
     Application, MessageHandler, CommandHandler,
     CallbackQueryHandler, filters, ContextTypes
@@ -151,6 +152,22 @@ def detectar_lugares(texto: str) -> list:
 def detectar_lugar(texto: str) -> str:
     nombres = detectar_lugares(texto)
     return nombres[0] if nombres else None
+
+
+def normalizar_markdown_telegram(texto: str) -> str:
+    """Convierte negritas Markdown estándar (**texto**), usadas por el LLM,
+    al formato Markdown legacy de Telegram (*texto*)."""
+    return re.sub(r"\*\*(.+?)\*\*", r"*\1*", texto)
+
+
+async def responder_con_markdown(update: Update, texto: str):
+    """Envía texto con negritas normalizadas para Telegram; si el resultado
+    tiene Markdown inválido, reintenta como texto plano."""
+    formateado = normalizar_markdown_telegram(texto)
+    try:
+        await update.message.reply_text(formateado, parse_mode="Markdown")
+    except BadRequest:
+        await update.message.reply_text(formateado)
 
 
 async def buscar_datos_lugar(nombre: str) -> dict:
@@ -503,7 +520,7 @@ async def procesar_pregunta(update: Update, context: ContextTypes.DEFAULT_TYPE,
             respuesta_texto = data["respuesta"]
             nombres_lugares = detectar_lugares(respuesta_texto)
 
-            await update.message.reply_text(respuesta_texto)
+            await responder_con_markdown(update, respuesta_texto)
 
             if nombres_lugares:
                 ultimos_lugares[usuario_id] = nombres_lugares[0]

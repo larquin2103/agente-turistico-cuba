@@ -160,6 +160,8 @@ El endpoint `/buscar_lugar` implementa tres pasos en cascada:
 
 Esto resuelve el caso donde el LLM escribe "Bodeguita del Medio" pero la DB tiene "La Bodeguita del Medio".
 
+El paso 3 exige `nodo.score >= UMBRAL_RELEVANCIA` (0.5, mismo umbral que `_log_si_sin_contexto`). Si el score es `None` o está por debajo, se devuelve `None, None` (→ 404) en lugar de la mejor coincidencia disponible. Esto evita mostrar la tarjeta de un lugar de otra ciudad/zona cuando el LLM menciona un sitio que no está en la DB (p. ej. preguntar por Trinidad cuando la DB es de La Habana): es preferible no mostrar tarjeta a mostrar una geográficamente incorrecta.
+
 ### Callback de Telegram — límite de 64 bytes
 
 `callback_data` en Telegram tiene límite de 64 bytes. Se usa `callback_store` (dict en memoria) con claves MD5 de 8 caracteres. El formato es `map|<key8chars>`.
@@ -215,6 +217,14 @@ En el flujo RAG, `procesar_pregunta()` envía `payload["idioma"] = IDIOMAS[idiom
 4. Líneas standalone con mayúscula inicial
 
 El system prompt de `api.py` instruye explícitamente al LLM a usar negritas para nombres de lugares.
+
+### Formato Markdown — negritas del LLM vs. Telegram
+
+El `SYSTEM_PROMPT` instruye al LLM a usar negritas estándar `**Nombre**` (necesario para `detectar_lugares()`), pero el `parse_mode="Markdown"` (legacy) de Telegram solo reconoce negritas con un asterisco: `*Nombre*`. `responder_con_markdown()` en `bot.py` aplica `normalizar_markdown_telegram()` (regex `\*\*(.+?)\*\*` → `*\1*`) **después** de `detectar_lugares()` y antes de enviar la respuesta del LLM con `parse_mode="Markdown"`. Si Telegram rechaza el Markdown resultante (`BadRequest`, p. ej. por asteriscos/guiones bajos sin pareja en el texto del LLM), se reintenta como texto plano. `procesar_pregunta()` usa esta función para la respuesta RAG; las respuestas de `/cercanos` ya usan un solo asterisco (generadas en `ubicacion.py`) y no necesitan normalización.
+
+### Transparencia — sin meta-comentarios del LLM
+
+El `SYSTEM_PROMPT` incluye una "REGLA DE TRANSPARENCIA" que prohíbe al LLM verbalizar su razonamiento interno (p. ej. "Note que cambiaste de idioma", "Por cierto, recuerdo que preguntaste sobre X"). El LLM debe responder directamente a la pregunta, en el idioma correspondiente, sin comentar el contexto, el historial o sus propias instrucciones.
 
 ### Mapas combinados multi-lugar
 
