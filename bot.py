@@ -38,6 +38,11 @@ logging.basicConfig(level=logging.INFO)
 # Último lugar mencionado por usuario
 ultimos_lugares: dict = {}
 
+# Tarjetas ya enviadas por usuario — evita reenviar las mismas en seguimientos
+# {usuario_id: {nombre_lower: timestamp}}
+tarjetas_enviadas: dict = {}
+TARJETA_TTL_SEG = 1800  # 30 min
+
 # Almacén de callbacks con TTL — evita superar el límite de 64 bytes de Telegram
 callback_store: dict = {}
 
@@ -168,6 +173,24 @@ async def responder_con_markdown(update: Update, texto: str):
         await update.message.reply_text(formateado, parse_mode="Markdown")
     except BadRequest:
         await update.message.reply_text(formateado)
+
+
+def _tarjetas_recientes(usuario_id: str) -> set:
+    """Nombres (lowercase) cuya tarjeta ya se envió a este usuario dentro del TTL."""
+    ahora    = time.time()
+    vigentes = {n: ts for n, ts in tarjetas_enviadas.get(usuario_id, {}).items()
+                if ahora - ts < TARJETA_TTL_SEG}
+    tarjetas_enviadas[usuario_id] = vigentes
+    return set(vigentes)
+
+
+def _registrar_tarjeta(usuario_id: str, *nombres: str):
+    """Marca nombres como ya enviados (tanto el detectado como el resuelto en DB)."""
+    ahora = time.time()
+    vistos = tarjetas_enviadas.setdefault(usuario_id, {})
+    for n in nombres:
+        if n:
+            vistos[n.lower()] = ahora
 
 
 async def buscar_datos_lugar(nombre: str) -> dict:
@@ -350,6 +373,7 @@ async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
     context.user_data["idioma"] = idioma
     ultimos_lugares.pop(usuario_id, None)
+    tarjetas_enviadas.pop(usuario_id, None)
     await update.message.reply_text(t("reset_confirmacion", idioma))
 
 
@@ -525,13 +549,20 @@ async def procesar_pregunta(update: Update, context: ContextTypes.DEFAULT_TYPE,
             if nombres_lugares:
                 ultimos_lugares[usuario_id] = nombres_lugares[0]
 
+                ya_enviadas    = _tarjetas_recientes(usuario_id)
                 lugares_con_db = []
 
                 for nombre_candidato in nombres_lugares[:MAX_TARJETAS * 2]:
+                    if nombre_candidato.lower() in ya_enviadas:
+                        continue
                     datos = await buscar_datos_lugar(nombre_candidato)
                     if datos and datos.get("lat"):
+                        if datos["nombre"].lower() in ya_enviadas:
+                            _registrar_tarjeta(usuario_id, nombre_candidato)
+                            continue
                         lugares_con_db.append(datos)
                         await enviar_tarjeta_lugar(update, datos, idioma)
+                        _registrar_tarjeta(usuario_id, nombre_candidato, datos["nombre"])
                         if len(lugares_con_db) >= MAX_TARJETAS:
                             break
 
